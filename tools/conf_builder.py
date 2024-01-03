@@ -126,7 +126,7 @@ def conf_builder(args, log_path):
                 username = "HA-CE-R31-001"
                 password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
                 # 创建MQTT客户端
-                mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端DB_Host_v"]}', username=username, password=password, client_id=did)
+                mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username, password=password, client_id=did)
                 # 连接到MQTT代理
                 mqtt_client.connect()
                 # 订阅主题

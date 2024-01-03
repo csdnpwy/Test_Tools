@@ -2,7 +2,7 @@ import os
 
 
 # 软件信息
-version = 23121419
+version = 24010310
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -51,8 +51,8 @@ iotpre = {
     '云端环境_v': 'http://iotpre.leelen.net:80',
     '云端DB_用户名_v': 'leelenread',
     '云端DB_密码_v': 'dOlbms1Cpgu&5wpN',
-    '云端DB_Host_v': '10.160.2.20',
-    '云端DB_Port_v': '3306',
+    '云端DB_Host_v': '47.99.129.175',
+    '云端DB_Port_v': '63506',
     '云端DB_库名_v': 'account',
     '云端MQTT_Host_v': 'iotpre.leelen.net',
     'MQTT常用服务器端口_v': '1883'
@@ -152,6 +152,7 @@ readme_test = "**************************** 使用说明 ***********************
          "修订记录；\n" \
          "23120516：修订输入框记忆功能-启动自动填充上一次填写记录\n" \
          "23121419：修订GUI图标以及增加菜单按钮\n" \
+         "24010310：修订预生产环境信息\n" \
          "\n" \
          "测试链路时长获取：\n" \
          "1、通过群组和联动的方式控制一个或多个测试设备（默认网关下挂所有设备）并监测全链路各个节点的用时；\n" \
