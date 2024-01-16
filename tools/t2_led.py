@@ -111,7 +111,7 @@ def t2_led(args, log_path):
     did = "12300001000000000666"
     username = "HA-CE-R31-001"
     password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
-    mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端DB_Host_v"]}', username=username,
+    mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username,
                              password=password, client_id=did, tool="t2_led", args=args)
     sql_did = f"select device_secret from iot_device where did = '{did}'"
     res = db_tool.getAll(sql_did)
