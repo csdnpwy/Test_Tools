@@ -91,7 +91,8 @@ class MyPymysqlPool(BasePymysqlPool):
                               db=self.db,
                               use_unicode=True,
                               charset=self.charset,
-                              cursorclass=DictCursor)
+                              cursorclass=DictCursor,
+                              autocommit=1)
         return __pool.connection()
 
     def getAll(self, sql, param=None):
@@ -215,7 +216,6 @@ class MyPymysqlPool(BasePymysqlPool):
             self.end('rollback')
         self._cursor.close()
         self._conn.close()
-
 
 # if __name__ == '__main__':
 #     # 根据SQL获取数据

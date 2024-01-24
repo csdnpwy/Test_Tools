@@ -125,7 +125,7 @@ def t2_led(args, log_path):
             payload = {
                 "method": "dmgr.reg",
                 "src": f"{did}",
-                "dst": f'{iot_moduleID}',
+                "dst": f'{dev_manage_moduleID}',
                 "version": "V1.0",
 
                 "params": {
@@ -135,7 +135,7 @@ def t2_led(args, log_path):
                 },
                 "seq": 1
             }
-            mqtt_client.publish(f"lliot/receiver/{iot_moduleID}", str(payload))
+            mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", str(payload))
             get_log(log_path).info(f'    ----    注册mqtt监听用户中...')
             time.sleep(3)
             # 启动消息循环

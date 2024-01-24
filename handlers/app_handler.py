@@ -65,6 +65,7 @@ def get_terminal_info(env, mysql_info, username, password, log_path):
         # post_data = json.dumps(post_data)
         # print(post_data)
         response = requests.post(url, headers=custom_headers, json=post_data)
+        get_log(log_path).debug(f"url={url}\ndata={post_data}\nres={response.text}")
         if response.status_code == 200:
             # 返回响应内容
             return response.text
@@ -80,8 +81,10 @@ def app_request(accesstoken, url, data, log_path):
         'Authorization': f'{accesstoken}'
     }
     response = requests.post(url, headers=custom_headers, json=data)
+    get_log(log_path).debug(f"url={url}\ndata={data}\nres={response.text}")
     if response.status_code == 200:
         # 返回响应内容
         return response.text
     else:
         get_log(log_path).error(f'请求失败，状态码：{response.status_code}')
+        return False

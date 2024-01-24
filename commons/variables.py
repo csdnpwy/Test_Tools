@@ -45,8 +45,10 @@ item_json = {
     'url': 'https://www.bejson.com/jsoneditoronline/'
 }
 
+# IOT组件
+dev_manage_moduleID = "00000001000000000000"
+
 # 测试环境配置信息
-iot_moduleID = "00000001000000000000"
 iotpre = {
     '云端环境_v': 'http://iotpre.leelen.net:80',
     '云端DB_用户名_v': 'leelenread',
@@ -86,6 +88,12 @@ iot58 = {
     '云端DB_库名_v': 'account',
     '云端MQTT_Host_v': '10.160.0.58',
     'MQTT常用服务器端口_v': '1883'
+}
+envs = {
+    'iotpre': iotpre,
+    'iottest': iottest,
+    '56': iot56,
+    '58': iot58,
 }
 # 虚拟设备信息
 vDev210 = {

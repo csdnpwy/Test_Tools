@@ -10,6 +10,7 @@ from commons.variables import *
 from handlers.check_for_update import check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
+from tools.direct_con_dev import direct_con_dev
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.property_builder import property_builder
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
@@ -135,6 +136,27 @@ def main():
     path = cf_parser.add_argument_group('配置存储路径')
     path.add_argument('Path', type=str, widget='DirChooser', default=config_manager.get_value('配置生成器', 'Path'))
 
+    direct_connect_dev = subs.add_parser('直连桩注册绑定')
+    env = direct_connect_dev.add_argument_group('预注册环境信息', gooey_options={'columns': 2})
+    envs = ["iotpre", "iottest", "56", "58"]
+    env.add_argument('测试环境', type=str, widget='Dropdown', choices=envs,
+                     default=config_manager.get_value('直连桩注册绑定', '测试环境', fallback='iotpre'))
+    app = direct_connect_dev.add_argument_group('预绑定APP信息', gooey_options={'columns': 2})
+    app.add_argument('用户名', type=str, widget='TextField',
+                     default=config_manager.get_value('直连桩注册绑定', '用户名', fallback='15606075512'))
+    app.add_argument('密码', type=str, widget='TextField',
+                     default=config_manager.get_value('直连桩注册绑定', '密码', fallback='test'))
+    app.add_argument('住家名称', type=str, widget='TextField',
+                     default=config_manager.get_value('直连桩注册绑定', '住家名称', fallback='我的家'))
+    app.add_argument('房间', type=str, widget='TextField',
+                     default=config_manager.get_value('直连桩注册绑定', '房间', fallback='客厅'))
+    stake = direct_connect_dev.add_argument_group('预注册直连桩信息', gooey_options={'columns': 2})
+    stake.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'Did'))
+    stake.add_argument('IP', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'IP', fallback='192.168.1.100'))
+    soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:355", "智能空开:HA-CE-R31-001:7"]
+    stake.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
+                       default=config_manager.get_value('直连桩注册绑定', '产品_软件模型_profileId'))
+
     profile_parser = subs.add_parser('属性生成器', help='虚拟设备属性生成器')
     default_txt = profile_example
     profile_parser.add_argument('真实设备属性值', help='', type=str, widget='Textarea', gooey_options={'height': 300},
@@ -162,6 +184,9 @@ def main():
         elif args.tools == '网关解绑绑定压测':
             log_path = f"{log_dir}gw_bind_unbind_{day}.txt"
             gw_bind_unbind_pressure(args, log_path)
+        elif args.tools == '直连桩注册绑定':
+            log_path = f"{log_dir}direct_connect_dev_{day}.txt"
+            direct_con_dev(args, log_path)
         else:
             pass
 

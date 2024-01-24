@@ -1,11 +1,14 @@
 import hashlib
+import json
 import os
+import random
 import time
 from datetime import datetime
-
+from commons.variables import *
 import paho.mqtt.client as mqtt
 
 from handlers.log_handler import get_log
+from lib.mqtt.modules import dmgr_checkBind, dmgr_readPIIDS, dmgr_ctrlFIIDS, dmgr_writePIIDS
 
 
 class MQTTClient:
@@ -18,12 +21,13 @@ class MQTTClient:
         self.password = password
 
         # 设置回调函数
-        if tool == 'default':
-            self.client.on_connect = self.on_connect
-            self.client.on_message = self.on_message
-        elif tool == 't2_led':
-            self.client.on_connect = self.on_connect_t2_led
+        self.client.on_connect = self.on_connect
+        if tool == 't2_led':
             self.client.on_message = self.on_message_t2_led
+        elif tool == 'direct_con_dev':
+            self.client.on_message = self.on_message_direct_con_dev
+        else:
+            self.client.on_message = self.on_message
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -33,12 +37,6 @@ class MQTTClient:
 
     def on_message(self, client, userdata, message):
         get_log(self.log_path).debug(f"Received message '{message.payload.decode()}' on topic '{message.topic}'")
-
-    def on_connect_t2_led(self, client, userdata, flags, rc):
-        if rc == 0:
-            get_log(self.log_path).debug("Connected to MQTT Broker")
-        else:
-            get_log(self.log_path).debug(f"Connection failed with code {rc}")
 
     def on_message_t2_led(self, client, userdata, message):
         playload = str(message.payload).replace(" ", "")
@@ -65,6 +63,24 @@ class MQTTClient:
                 with open(f'{os.path.dirname(self.log_path)}\\fiids_report.txt', 'a') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}\n')
 
+    def on_message_direct_con_dev(self, client, userdata, message):
+        get_log(self.log_path).debug(f"Received message:'{message.payload.decode()}' on topic:'{message.topic}'")
+        method = json.loads(message.payload)['method']
+        seq = json.loads(message.payload)['seq']
+        module = json.loads(message.payload)['src']
+        rsp_topic = f"lliot/receiver/{module}"
+        if method == 'dmgr.checkBind':
+            rsp_playload = dmgr_checkBind(self.args, module=module, seq=seq)['rsp']
+        elif method == 'dmgr.readPIIDS':
+            rsp_playload = dmgr_readPIIDS(self.args, module=module, seq=seq)['rsp']
+        elif method == 'dmgr.ctrlFIIDS':
+            rsp_playload = dmgr_ctrlFIIDS(self.args, module=module, seq=seq)['rsp']
+        elif method == 'dmgr.writePIIDS':
+            rsp_playload = dmgr_writePIIDS(self.args, module=module, seq=seq)['rsp']
+        else:
+            rsp_playload = None
+        self.publish(rsp_topic, str(rsp_playload))
+
     def connect(self):
         if self.username and self.password:
             self.client.username_pw_set(self.username, self.password)
@@ -72,6 +88,7 @@ class MQTTClient:
         self.client.loop_start()
 
     def publish(self, topic, message, qos=0, retain=False):
+        get_log(self.log_path).debug(f"Publish message:'{message}' on topic:'{topic}'")
         self.client.publish(topic, message, qos, retain)
 
     def subscribe(self, topic, qos=0):

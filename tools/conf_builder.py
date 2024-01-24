@@ -135,9 +135,8 @@ def conf_builder(args, log_path):
                 payload = {
                     "method": "dmgr.reg",
                     "src": f"{did}",
-                    "dst": f'{iot_moduleID}',
+                    "dst": f'{dev_manage_moduleID}',
                     "version": "V1.0",
-
                     "params": {
                         "did": f"{did}",
                         "softModel": f"{username}",
@@ -145,17 +144,15 @@ def conf_builder(args, log_path):
                     },
                     "seq": 1
                 }
-                mqtt_client.publish(f"lliot/receiver/{iot_moduleID}", str(payload))
+                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", str(payload))
                 get_log(log_path).info(f'    ----    注册{did}中...')
                 time.sleep(3)
-                # 启动消息循环
-                mqtt_client.start_loop()
                 # 停止消息循环
                 mqtt_client.stop_loop()
                 # 断开连接
                 mqtt_client.disconnect()
                 query_res = db_tool.getAll(sql)
-                if query_res != 'False':
+                if query_res:
                     get_log(log_path).info(f'        ----        桩did={did}注册成功')
                     time.sleep(2)
             except Exception as e:
