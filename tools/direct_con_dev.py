@@ -12,7 +12,6 @@ from lib.mqtt.modules import dmgr_reg
 
 def direct_con_dev(args, log_path):
     global db_tool
-    mysql_info = {}
     get_log(log_path).debug(args)
     # 环境检测
     get_log(log_path).info(f'Step 1：检测预注册环境信息...')
@@ -92,7 +91,7 @@ def direct_con_dev(args, log_path):
         time.sleep(2)
     get_log(log_path).info(f'Step 2：开始执行直连桩登录并启动主题监听...')
     # 通过一机一密登录
-    username = f"{soft_name}:{args.Did}"
+    username = f"{soft_model}:{args.Did}"
     # 创建MQTT客户端
     mqtt_client = MQTTClient(log_path, f'{envs[env]["云端MQTT_Host_v"]}', username=username,
                              password=device_secret_res[0]['device_secret'],
@@ -104,13 +103,24 @@ def direct_con_dev(args, log_path):
     time.sleep(2)
     # 绑定设备
     get_log(log_path).info(f'Step 3：开始执行直连桩绑定...')
-    res = bindDevice(args, log_path)
-    time.sleep(5)
-    if res:
-        get_log(log_path).info(f'    ----    直连桩绑定APP成功')
+    dev_bind_sql = f"select count(*), group_id from newiot_device_bind_ext where did = '{args.Did}'"
+    bind_res = db_tool.getAll(dev_bind_sql)
+    if bind_res[0]['count(*)'] != 0:
+        get_log(log_path).info(f'    ----    直连桩已被住家{bind_res[0]["group_id"]}绑定')
     else:
-        get_log(log_path).error(f'    !!!!    直连桩绑定APP失败')
-        sys.exit()
+        res = bindDevice(args, log_path)
+        waitTime = int(json.loads(res)['waitTime'])/1000
+        for i in range(0, int(waitTime)):
+            get_log(log_path).info(f'    ----    等待倒计时{int(waitTime) - i}S...')
+            bind_res = db_tool.getAll(dev_bind_sql)
+            if bind_res[0]['count(*)'] == 1:
+                get_log(log_path).info(f'    ----    直连桩绑定APP成功')
+                break
+            elif i == int(waitTime)-1:
+                get_log(log_path).error(f'    !!!!    直连桩绑定APP失败')
+                sys.exit()
+            time.sleep(1)
+    time.sleep(2)
     get_log(log_path).info(f'Step 4：停止主题监听，释放资源...')
     # 停止消息循环
     mqtt_client.stop_loop()

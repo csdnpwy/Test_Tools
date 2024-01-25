@@ -77,7 +77,7 @@ def conf_builder(args, log_path):
         get_log(log_path).info(f'    ----    APP获取网关绑定住家及房间正常')
         time.sleep(2)
     except Exception as e:
-        get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保测试住家下只绑定一个预测试网关\n3、确保网关did填写正确")
+        get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保网关did填写正确")
         time.sleep(2)
     # 网关
     gateway = {
