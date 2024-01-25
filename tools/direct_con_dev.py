@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import sys
 import time
 from commons.variables import *
 from handlers.log_handler import get_log
@@ -23,7 +24,7 @@ def direct_con_dev(args, log_path):
                       'charset': 'utf8'}
     else:
         get_log(log_path).error(f'未找到{env}环境下的任何配置，请确认环境是否正确或让管理员添加对应数据！')
-        exit()
+        sys.exit()
     time.sleep(2)
     # APP检测
     # 判断用户名密码是否正确
@@ -34,11 +35,11 @@ def direct_con_dev(args, log_path):
     user_pw_sql = f"select password from lbl_app_account where username = '{username}'"
     user_pw_sql_res = db_tool.getAll(user_pw_sql)
     if not user_pw_sql_res:
-        get_log(log_path).erro(f'    !!!!    APP用户名不存在，请更正')
-        exit()
+        get_log(log_path).error(f'    !!!!    APP用户名不存在，请更正')
+        sys.exit()
     elif password != user_pw_sql_res[0]['password']:
-        get_log(log_path).erro(f'    !!!!    APP密码错误，请更正')
-        exit()
+        get_log(log_path).error(f'    !!!!    APP密码错误，请更正')
+        sys.exit()
     home_info = getMyAllHomeInfo(args, log_path)
     groupId = None
     subGroupId = None
@@ -50,7 +51,7 @@ def direct_con_dev(args, log_path):
                     subGroupId = room['subGroupId']
     if groupId is None or subGroupId is None:
         get_log(log_path).error(f'    !!!!    未找到住家 {args.住家名称} 或房间 {args.房间}')
-        exit()
+        sys.exit()
     time.sleep(2)
     get_log(log_path).info("*" * gap_num)
     get_log(log_path).info(f'Step 1：开始执行直连桩注册...')
@@ -85,7 +86,7 @@ def direct_con_dev(args, log_path):
             time.sleep(2)
         else:
             get_log(log_path).error(f'        !!!!        直连桩did={args.Did}注册失败')
-            exit()
+            sys.exit()
     else:
         get_log(log_path).info(f'    ----    直连桩did={args.Did}已在该测试环境注册')
         time.sleep(2)
@@ -109,7 +110,7 @@ def direct_con_dev(args, log_path):
         get_log(log_path).info(f'    ----    直连桩绑定APP成功')
     else:
         get_log(log_path).error(f'    !!!!    直连桩绑定APP失败')
-        exit()
+        sys.exit()
     get_log(log_path).info(f'Step 4：停止主题监听，释放资源...')
     # 停止消息循环
     mqtt_client.stop_loop()

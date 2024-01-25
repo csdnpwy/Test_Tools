@@ -60,8 +60,8 @@ def main():
     gateway = time_parser.add_argument_group('测试网关信息', gooey_options={'columns': 2})
     gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('测试链路时长获取', 'Did'))
     other = time_parser.add_argument_group('其他信息', gooey_options={'columns': 2})
-    other.add_argument('测试间隔时长', type=int, widget='TextField',
-                       default=config_manager.get_value('测试链路时长获取', '测试间隔时长', fallback='30'))
+    other.add_argument('测试间隔时长', type=float, widget='TextField',
+                       default=config_manager.get_value('测试链路时长获取', '测试间隔时长', fallback='30'), help='每轮测试超时时长')
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('测试链路时长获取', '测试轮询次数', fallback='100'))
 
