@@ -8,7 +8,7 @@ from commons.variables import *
 import paho.mqtt.client as mqtt
 
 from handlers.log_handler import get_log
-from lib.mqtt.modules import dmgr_checkBind, dmgr_readPIIDS, dmgr_ctrlFIIDS, dmgr_writePIIDS
+from lib.mqtt.modules import dmgr_checkBind, dmgr_readPIIDS, dmgr_ctrlFIIDS, dmgr_writePIIDS, dmgr_notifyUnBind
 
 
 class MQTTClient:
@@ -69,7 +69,9 @@ class MQTTClient:
         seq = json.loads(message.payload)['seq']
         module = json.loads(message.payload)['src']
         rsp_topic = f"lliot/receiver/{module}"
-        if method == 'dmgr.checkBind':
+        if method == 'dmgr.notifyUnBind':
+            rsp_playload = dmgr_notifyUnBind(self.args, module=module, seq=seq)['rsp']
+        elif method == 'dmgr.checkBind':
             rsp_playload = dmgr_checkBind(self.args, module=module, seq=seq)['rsp']
         elif method == 'dmgr.readPIIDS':
             rsp_playload = dmgr_readPIIDS(self.args, module=module, seq=seq)['rsp']

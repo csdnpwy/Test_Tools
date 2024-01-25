@@ -64,6 +64,28 @@ def dmgr_checkBind(args, module=dev_manage_moduleID, seq=666):
     return res
 
 
+def dmgr_notifyUnBind(args, module=dev_manage_moduleID, seq=666):
+    """
+    生成设备解绑mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、产品_软件模型_profileId】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 设备解绑mqtt报文、回复报文
+    """
+    req_payload = None
+    rsp_payload = {
+        "method": "dmgr.notifyUnBind",
+        "src": f"{args.Did}",
+        "dst": f"{module}",
+        "result": 1,
+        "seq": seq,
+        "version": "V1.0"
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
 def dmgr_readPIIDS(args, module=dev_manage_moduleID, seq=666):
     """
     读取属性mqtt报文和回复报文

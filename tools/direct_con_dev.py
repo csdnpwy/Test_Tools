@@ -105,6 +105,7 @@ def direct_con_dev(args, log_path):
     get_log(log_path).info(f'Step 3：开始执行直连桩绑定...')
     dev_bind_sql = f"select count(*), group_id from newiot_device_bind_ext where did = '{args.Did}'"
     bind_res = db_tool.getAll(dev_bind_sql)
+    time.sleep(5)
     if bind_res[0]['count(*)'] != 0:
         get_log(log_path).info(f'    ----    直连桩已被住家{bind_res[0]["group_id"]}绑定')
     else:
