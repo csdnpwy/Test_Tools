@@ -76,31 +76,30 @@ def t2_led(args, log_path):
         time.sleep(2)
         # 获取网关下挂设备
         if args.场景 == "分布式-群组":
-            sql_devices = f"select did, name from account.iot_device aadi where direct_did = '{args.Did}' and did != '{args.Did}'"
+            sql_devices = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1'"
         elif args.场景 == "集中式-联动":
-            sql_devices = f"select did from account.iot_device aadi where direct_did = '{args.Did}' and did = '{args.联动条件did}'"
+            sql_devices = f"select did, logic_name from iot_dc_logic_device where mactch_category = '1' and did = '{args.联动条件did}' and siid = '2'"
             devices_condition = db_tool.getAll(sql_devices)
             if not devices_condition:
                 get_log(log_path).error(f'    !!!!    网关未下挂联动条件设备 {args.联动条件did}')
                 sys.exit()
-            sql_devices = f"select did, name from account.iot_device aadi where direct_did = '{args.Did}' and did != '{args.Did}' and did != '{args.联动条件did}'"
+            sql_devices = f"select did, logic_name, siid, service_type, is_display from (select * from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1') as subset where not (did = '{args.联动条件did}' and siid = '2')"
         elif args.场景 == "单控":
             if args.单控did != 'All':
-                sql_devices = f"select did, name from account.iot_device aadi where direct_did = '{args.Did}' and did = '{args.单控did}'"
+                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.单控did}' and siid = '2'"
             else:
-                sql_devices = f"select did, name from account.iot_device aadi where direct_did = '{args.Did}' and did != '{args.Did}'"
+                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and siid = '2'"
         else:
-            sql_devices = f"select did, name from account.iot_device aadi where direct_did = '{args.Did}' and did != '{args.Did}'"
+            return
         devices_did = db_tool.getAll(sql_devices)
         if not devices_did or len(devices_did) == 0:
             get_log(log_path).error(f'    !!!!    网关未下挂任何预测试设备')
             sys.exit()
         else:
             get_log(log_path).debug(f'{devices_did}')
-            get_log(log_path).info(f'    ----    共计下挂 {len(devices_did)} 个预测试设备')
-            time.sleep(2)
+            get_log(log_path).info(f'    ----    共计下挂 {len(devices_did)} 个预测试设备（逻辑设备）')
     except Exception as e:
-        get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保测试住家下只绑定一个预测试网关\n3、确保网关did填写正确")
+        get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保网关did填写正确")
         sys.exit()
     get_log(log_path).info("*" * gap_num)
     # 环境初始化
@@ -108,6 +107,8 @@ def t2_led(args, log_path):
     terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
     accessToken = json.loads(terminal_info)['params']['accessToken']
     # 注册监听用户
+    time.sleep(2)
+    get_log(log_path).info(f'    ----    启用监听mqtt客户端')
     did = "12300001000000000666"
     username = "HA-CE-R31-001"
     password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
@@ -136,22 +137,25 @@ def t2_led(args, log_path):
                 "seq": 1
             }
             mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", str(payload))
-            get_log(log_path).info(f'    ----    注册mqtt监听用户中...')
+            get_log(log_path).info(f'        ----        注册mqtt监听用户中...')
             time.sleep(3)
             # 启动消息循环
             mqtt_client.start_loop()
             # 停止消息循环
             mqtt_client.stop_loop()
         except Exception as e:
-            get_log(log_path).error(f'    !!!!    注册mqtt监听用户失败：{e}')
-            time.sleep(2)
+            get_log(log_path).error(f'        !!!!        注册mqtt监听用户失败：{e}')
     else:
-        get_log(log_path).info(f'    ----    启用监听mqtt客户端')
-        # 连接到MQTT代理
-        mqtt_client.connect()
+        get_log(log_path).info(f'        ----        mqtt监听用户已存在，无需注册...')
+    time.sleep(2)
+    get_log(log_path).info(f'        ----        订阅所有相关主题...')
+    # 连接到MQTT代理
+    mqtt_client.connect()
     # 订阅所有设备功能反馈主题
+    dev_list = []
     for device in devices_did:
-        topic = f"lliot/fiids_report/{device['did']}/2"
+        topic = f"lliot/fiids_report/{device['did']}/{device['siid']}"
+        dev_list.append(f"{device['did']}/{device['siid']}")
         mqtt_client.subscribe(topic)
     # 订阅网关接收主题
     topic = f"lliot/receiver/{args.Did}"
@@ -161,11 +165,9 @@ def t2_led(args, log_path):
         get_log(log_path).info(f'    ----    创建测试群组')
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/smartHome/classify/addOrModify"
         deviceList = []
-        dev_list = []
         for device in devices_did:
-            devices = {'did': device['did'], 'directDid': args.Did, 'siid': 2, 'logicName': device['name'],
-                       'serviceType': 8314, 'isDisplay': 1}
-            dev_list.append(device['did'])
+            devices = {'did': device['did'], 'directDid': args.Did, 'siid': device['siid'], 'logicName': device['logic_name'],
+                       'serviceType': device['service_type'], 'isDisplay': device['is_display']}
             deviceList.append(devices)
         data = {
             "seq": 999,
@@ -180,6 +182,9 @@ def t2_led(args, log_path):
             }
         }
         res = app_request(accessToken, url, data, log_path)
+        if not res:
+            get_log(log_path).error(f'        !!!!        群组创建失败')
+            sys.exit()
         time.sleep(30)
         get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'开始执行测试...')
@@ -231,7 +236,7 @@ def t2_led(args, log_path):
                 with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                     lines = f.readlines()
                     for line in lines:
-                        report_list.append(line.split('--')[1].strip().split('/')[2])
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                     last_line = lines[-1]
                     content = last_line.split('--')[0].strip()
                     end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
@@ -268,7 +273,7 @@ def t2_led(args, log_path):
                 with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                     lines = f.readlines()
                     for line in lines:
-                        report_list.append(line.split('--')[1].strip().split('/')[2])
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                     last_line = lines[-1]
                     content = last_line.split('--')[0].strip()
                     end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
@@ -293,7 +298,6 @@ def t2_led(args, log_path):
     elif args.场景 == '集中式-联动':
         get_log(log_path).info(f'    ----    创建联动场景')
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/linkage/addOrModify"
-        dev_list = []
         ctrlList = []
         conditionList = []
         ctrlId = 0
@@ -305,14 +309,14 @@ def t2_led(args, log_path):
                 "isDefaultValue": isDefaultValue,
                 "ctrlType": 0,
                 "directDid": f"{args.Did}",
-                "defaultName": f"{device['name']}",
-                "siid": 2,
+                "defaultName": f"{device['logic_name']}",
+                "siid": f"{device['siid']}",
                 "roomName": f"{room}",
                 "ctrlId": ctrlId,
                 "floorId": "(null)",
                 "isUpdate": 1,
                 "did": f"{device['did']}",
-                "serviceType": 8314,
+                "serviceType": f"{device['service_type']}",
                 "roomId": f"{roomID}",
                 "fiids": [
                     {
@@ -322,17 +326,16 @@ def t2_led(args, log_path):
                         "fiid": 49408
                     }
                 ],
-                "name": "T2智能筒射灯30",
+                "name": f"{device['logic_name']}",
                 "sort": sort
             }
-            dev_list.append(device['did'])
             ctrlList.append(devices)
             ctrlId += 1
             sort += 1
         for device in devices_condition:
             condition = {
                 "fiid": 49408,
-                "name": "灯",
+                "name": f"{device['logic_name']}",
                 "did": f"{device['did']}",
                 "compareConditionList": [
                     {
@@ -368,7 +371,12 @@ def t2_led(args, log_path):
             }
         }
         res = app_request(accessToken, url, open_data, log_path)
-        get_log(log_path).debug(res)
+        if not res:
+            get_log(log_path).error(f'        !!!!        开联动场景创建失败')
+            sys.exit()
+        else:
+            get_log(log_path).error(f'        ----        创建开联动场景中，请耐心等待...')
+        time.sleep(30)
         ctrlList = []
         conditionList = []
         ctrlId = 0
@@ -380,14 +388,14 @@ def t2_led(args, log_path):
                 "isDefaultValue": isDefaultValue,
                 "ctrlType": 0,
                 "directDid": f"{args.Did}",
-                "defaultName": f"{device['name']}",
-                "siid": 2,
+                "defaultName": f"{device['logic_name']}",
+                "siid": f"{device['siid']}",
                 "roomName": f"{room}",
                 "ctrlId": ctrlId,
                 "floorId": "(null)",
                 "isUpdate": 1,
                 "did": f"{device['did']}",
-                "serviceType": 8314,
+                "serviceType": f"{device['service_type']}",
                 "roomId": f"{roomID}",
                 "fiids": [
                     {
@@ -397,7 +405,7 @@ def t2_led(args, log_path):
                         "fiid": 49408
                     }
                 ],
-                "name": "T2智能筒射灯30",
+                "name": f"{device['logic_name']}",
                 "sort": sort
             }
             ctrlList.append(devices)
@@ -406,7 +414,7 @@ def t2_led(args, log_path):
         for device in devices_condition:
             condition = {
                 "fiid": 49408,
-                "name": "灯",
+                "name": f"{device['logic_name']}",
                 "did": f"{device['did']}",
                 "compareConditionList": [
                     {
@@ -442,7 +450,11 @@ def t2_led(args, log_path):
             }
         }
         res = app_request(accessToken, url, down_data, log_path)
-        get_log(log_path).debug(res)
+        if not res:
+            get_log(log_path).error(f'        !!!!        关联动场景创建失败')
+            sys.exit()
+        else:
+            get_log(log_path).error(f'        ----        创建关联动场景中，请耐心等待...')
         time.sleep(30)
         get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'开始执行测试...')
@@ -499,7 +511,7 @@ def t2_led(args, log_path):
                 with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                     lines = f.readlines()
                     for line in lines:
-                        report_list.append(line.split('--')[1].strip().split('/')[2])
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                     last_line = lines[-1]
                     content = last_line.split('--')[0].strip()
                     end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
@@ -536,7 +548,7 @@ def t2_led(args, log_path):
                 with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                     lines = f.readlines()
                     for line in lines:
-                        report_list.append(line.split('--')[1].strip().split('/')[2])
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                     last_line = lines[-1]
                     content = last_line.split('--')[0].strip()
                     end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
@@ -600,12 +612,14 @@ def t2_led(args, log_path):
                     with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                         lines = f.readlines()
                         for line in lines:
-                            report_list.append(line.split('--')[1].strip().split('/')[2])
+                            report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                         last_line = lines[-1]
                         content = last_line.split('--')[0].strip()
                         end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
-                    if device['did'] not in list(set(report_list)):
-                        get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{device['did']}测试设备的开状态上报主题")
+                    dev_list = [f"{device['did']}/{device['siid']}"]
+                    unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
+                    if unique_list_open:
+                        get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题")
                     else:
                         get_log(log_path).debug(
                             f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n子设备上报开状态时间：{end_time}')
@@ -654,12 +668,13 @@ def t2_led(args, log_path):
                     with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
                         lines = f.readlines()
                         for line in lines:
-                            report_list.append(line.split('--')[1].strip().split('/')[2])
+                            report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
                         last_line = lines[-1]
                         content = last_line.split('--')[0].strip()
                         end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
-                    if device['did'] not in list(set(report_list)):
-                        get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{device['did']}测试设备的关状态上报主题")
+                    unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
+                    if unique_list_open:
+                        get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的关状态上报主题")
                     else:
                         get_log(log_path).debug(
                             f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n子设备上报关状态时间：{end_time}')

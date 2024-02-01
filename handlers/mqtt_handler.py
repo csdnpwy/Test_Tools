@@ -80,7 +80,7 @@ class MQTTClient:
         elif method == 'dmgr.writePIIDS':
             rsp_playload = dmgr_writePIIDS(self.args, module=module, seq=seq)['rsp']
         else:
-            rsp_playload = None
+            return
         self.publish(rsp_topic, str(rsp_playload))
 
     def connect(self):
