@@ -76,14 +76,14 @@ def t2_led(args, log_path):
         time.sleep(2)
         # 获取网关下挂设备
         if args.场景 == "分布式-群组":
-            sql_devices = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1'"
+            sql_devices = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
         elif args.场景 == "集中式-联动":
             sql_devices = f"select did, logic_name from iot_dc_logic_device where mactch_category = '1' and did = '{args.联动条件did}' and siid = '2'"
             devices_condition = db_tool.getAll(sql_devices)
             if not devices_condition:
                 get_log(log_path).error(f'    !!!!    网关未下挂联动条件设备 {args.联动条件did}')
                 sys.exit()
-            sql_devices = f"select did, logic_name, siid, service_type, is_display from (select * from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1') as subset where not (did = '{args.联动条件did}' and siid = '2')"
+            sql_devices = f"select did, logic_name, siid, service_type, is_display from (select * from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}') as subset where not (did = '{args.联动条件did}' and siid = '2')"
         elif args.场景 == "单控":
             if args.单控did != 'All':
                 sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.单控did}' and siid = '2'"

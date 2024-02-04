@@ -3,8 +3,8 @@
 """
 组件mqtt报文解析
 主体为GUI的Did，即：
-req_payload为向Did请求的报文
-rsp_payload为Did回复报文
+req_payload为向Did请求（收到）的报文
+rsp_payload为Did回复（发出）报文
 """
 import random
 
@@ -278,6 +278,119 @@ def dmgr_writePIIDS(args, module=dev_manage_moduleID, seq=666):
         "src": f"{args.Did}",
         "dst": f"{module}",
         "result": 1,
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
+def dmgr_subDeviceOnlineStatus(args, module=dev_manage_moduleID, seq=666):
+    """
+    子设备在线状态上报mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 子设备在线状态上报mqtt报文、回复报文
+    """
+    req_payload = {
+        "dst": f"{args.Did}",
+        "message": "正确应答",
+        "method": "dmgr.subDeviceOnlineStatus",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.subDeviceOnlineStatus",
+        "src": f"{args.Did}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": [{
+            "did": f"{args.subDid}",
+            "status": 1
+        }],
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
+def dmgr_reportAddDevice(args, module=dev_manage_moduleID, seq=666):
+    """
+    添加子设备mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 添加子设备mqtt报文、回复报文
+    """
+    req_payload = {
+        "dst": f"{args.Did}",
+        "message": "正确应答",
+        "method": "dmgr.reportAddDevice",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.reportAddDevice",
+        "src": f"{args.Did}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": {
+            "businessId": "FA2F64CC-2C62-462F-B116-54929539231D",
+            "subDevices": [{
+                "errCode": "null",
+                "fatherDid": f"{args.Did}",
+                "did": f"{args.subDid}",
+                "profileId": 319,
+                "manufacturer": "LEELEN",
+                "lineProductModel": "HAZB-PS-R84-001",
+                "softModel": "HAZB-AD-R82-001",
+                "softVersion": "MAIN-EFR32MG21:1.30",
+                "productSn": "032609E01K000271",
+                "softProjectNo": "HA-2206"
+            }]
+        },
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
+def dmgr_reportPIIDS(args, module=dev_manage_moduleID, seq=666):
+    """
+    上报网络短地址属性和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 子上报网络短地址属性和回复报文
+    """
+    req_payload = {
+        "dst": f"{args.Did}",
+        "message": "正确应答",
+        "method": "dmgr.reportPIIDS",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.reportPIIDS",
+        "src": f"{args.Did}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": {
+            "did": f"{args.subDid}",
+            "siids": [{
+                "siid": 0,
+                "piids": [{
+                    "piid": 273,
+                    "value": 0
+                }]
+            }]
+        },
         "seq": seq
     }
     res = {"req": req_payload, "rsp": rsp_payload}

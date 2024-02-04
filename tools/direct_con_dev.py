@@ -7,7 +7,7 @@ from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
 from lib.app.client_app import getMyAllHomeInfo, json, bindDevice
-from lib.mqtt.modules import dmgr_reg
+from lib.mqtt.modules import dmgr_reg, dmgr_subDeviceOnlineStatus, dmgr_reportAddDevice, dmgr_reportPIIDS
 
 
 def direct_con_dev(args, log_path):
@@ -122,7 +122,27 @@ def direct_con_dev(args, log_path):
                 sys.exit()
             time.sleep(1)
     time.sleep(2)
-    get_log(log_path).info(f'Step 4：停止主题监听，释放资源...')
+    # 绑定子设备
+    get_log(log_path).info(f'Step 4：开始执行绑定子设备桩...')
+    subDev_sql = f"select direct_did from iot_device where did = '{args.subDid}'"
+    subDev_res = db_tool.getAll(subDev_sql)
+    if not subDev_res:
+        topic = f"lliot/receiver/{dev_manage_moduleID}"
+        messages = [dmgr_subDeviceOnlineStatus(args)['rsp'], dmgr_reportAddDevice(args)['rsp'], dmgr_reportPIIDS(args)['rsp']]
+        for message in messages:
+            mqtt_client.publish(topic, str(message))
+            time.sleep(2)
+        subDev_sql = f"select * from iot_device where did = '{args.subDid}' and direct_did = '{args.Did}'"
+        subDev_res = db_tool.getAll(subDev_sql)
+        if subDev_res:
+            get_log(log_path).info(f'    ----    子设备桩绑定成功')
+        else:
+            get_log(log_path).error(f'    !!!!    子设备桩绑定失败')
+    else:
+        get_log(log_path).info(f'    ----    子设备桩已被直连设备{subDev_res[0]["direct_did"]}绑定')
+    time.sleep(2)
+    # 释放资源
+    get_log(log_path).info(f'Step 5：停止主题监听，释放资源...')
     # 停止消息循环
     mqtt_client.stop_loop()
     # 断开连接

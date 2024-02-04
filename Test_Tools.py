@@ -152,10 +152,17 @@ def main():
                      default=config_manager.get_value('直连桩注册绑定', '房间', fallback='客厅'))
     stake = direct_connect_dev.add_argument_group('预注册直连桩信息', gooey_options={'columns': 2})
     stake.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'Did'))
-    stake.add_argument('IP', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'IP', fallback='192.168.1.100'))
-    soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:355", "智能空开:HA-CE-R31-001:7"]
+    stake.add_argument('IP', type=str, widget='TextField',
+                       default=config_manager.get_value('直连桩注册绑定', 'IP', fallback='192.168.1.100'))
+    # soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:355", "智能空开:HA-CE-R31-001:7"]  智能空开待调试
+    soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:355"]
     stake.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
                        default=config_manager.get_value('直连桩注册绑定', '产品_软件模型_profileId'))
+    subDev = direct_connect_dev.add_argument_group('预注册子设备桩信息', gooey_options={'columns': 1})
+    subDev.add_argument('subDid', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'subDid'))
+    subDevs = ["T2智能筒射灯:HAZB-AD-R82-001"]
+    subDev.add_argument('产品_软件模型', type=str, widget='Dropdown', choices=subDevs,
+                        default=config_manager.get_value('直连桩注册绑定', '产品_软件模型'))
 
     profile_parser = subs.add_parser('属性生成器', help='虚拟设备属性生成器')
     default_txt = profile_example
