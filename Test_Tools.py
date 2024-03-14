@@ -27,7 +27,8 @@ running = True
     language='chinese',
     default_size=(750, 700),
     header_show_title=False,
-    menu=[{'name': '文件', 'items': [item_env, item_vdev, item_sys]}, {'name': '工具', 'items': [item_rttys, item_json]}, {'name': '帮助', 'items': [item_about]}]
+    menu=[{'name': '文件', 'items': [item_env, item_vdev, item_sys]}, {'name': '工具', 'items': [item_rttys, item_json]},
+          {'name': '帮助', 'items': [item_about]}]
 )
 def main():
     input_info = os.path.join(project_root, "input_info.ini")
@@ -83,23 +84,31 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('T2筒射灯色温压测', '测试轮询次数', fallback='50'))
 
-    gw_bind_unbind = subs.add_parser('网关解绑绑定压测', help='网关解绑绑定压测')
+    gw_bind_unbind = subs.add_parser('解绑绑定压测', help='解绑绑定压测')
     env = gw_bind_unbind.add_argument_group('测试环境信息', gooey_options={'columns': 2})
     scenes = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
-                     default=config_manager.get_value('网关解绑绑定压测', '测试环境', fallback='iotpre'))
+                     default=config_manager.get_value('解绑绑定压测', '测试环境', fallback='iotpre'))
     app = gw_bind_unbind.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
-                     default=config_manager.get_value('网关解绑绑定压测', '用户名', fallback='15606075512'))
+                     default=config_manager.get_value('解绑绑定压测', '用户名', fallback='15606075512'))
     app.add_argument('密码', type=str, widget='TextField',
-                     default=config_manager.get_value('网关解绑绑定压测', '密码', fallback='test'))
-    gateway = gw_bind_unbind.add_argument_group('测试网关信息', gooey_options={'columns': 2})
-    gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('网关解绑绑定压测', 'Did'))
+                     default=config_manager.get_value('解绑绑定压测', '密码', fallback='test'))
+    gateway = gw_bind_unbind.add_argument_group('测试设备信息', gooey_options={'columns': 2})
+    devices = ["网关", "wifi灯带"]
+    gateway.add_argument('设备类型', type=str, widget='Dropdown', choices=devices,
+                         default=config_manager.get_value('解绑绑定压测', '设备类型', fallback='网关'))
+    gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('解绑绑定压测', 'Did'))
+    gateway.add_argument('SN', type=str, widget='TextField', help='网关填写默认值None',
+                         default=config_manager.get_value('解绑绑定压测', 'SN', fallback='None'))
+    wifi = gw_bind_unbind.add_argument_group('WiFi信息', gooey_options={'columns': 2})
+    wifi.add_argument('wifi名称', type=str, widget='TextField', default=config_manager.get_value('解绑绑定压测', 'wifi名称'))
+    wifi.add_argument('wifi密码', type=str, widget='TextField', default=config_manager.get_value('解绑绑定压测', 'wifi密码'))
     other = gw_bind_unbind.add_argument_group('其他信息', gooey_options={'columns': 2})
     other.add_argument('测试间隔时长', type=int, widget='TextField',
-                       default=config_manager.get_value('网关解绑绑定压测', '测试间隔时长', fallback='1'))
+                       default=config_manager.get_value('解绑绑定压测', '测试间隔时长', fallback='1'))
     other.add_argument('测试轮询次数', type=int, widget='TextField',
-                       default=config_manager.get_value('网关解绑绑定压测', '测试轮询次数', fallback='1'))
+                       default=config_manager.get_value('解绑绑定压测', '测试轮询次数', fallback='1'))
 
     readme_parser = subs.add_parser('******开发助手*******')
     default_txt = readme_develop
@@ -188,7 +197,7 @@ def main():
         elif args.tools == '属性生成器':
             log_path = f"{log_dir}conf_builder_{day}.txt"
             property_builder(args, log_path)
-        elif args.tools == '网关解绑绑定压测':
+        elif args.tools == '解绑绑定压测':
             log_path = f"{log_dir}gw_bind_unbind_{day}.txt"
             gw_bind_unbind_pressure(args, log_path)
         elif args.tools == '直连桩注册绑定':
