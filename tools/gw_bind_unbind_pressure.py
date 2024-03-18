@@ -132,52 +132,56 @@ def gw_bind_unbind_pressure(args, log_path):
         "version": "V1.0"
     }
     for num in range(0, nums):
-        get_log(log_path).info(f'第 {num + 1} 次解绑操作...')
-        res = app_request(accessToken, unbind_url, unbind_data, log_path)
-        if json.loads(res)["result"] == 1:
-            get_log(log_path).info(f" --- APP发送解绑请求成功")
-            time.sleep(3)
-            group_id = db_tool.getAll(sql_group_id)
-            if group_id:
-                get_log(log_path).error(f" !!! 设备解绑失败")
-            else:
-                get_log(log_path).info(f" --- 设备解绑成功")
-        else:
-            get_log(log_path).error(f" !!! APP发送解绑请求失败")
-        time.sleep(args.测试间隔时长)
-        get_log(log_path).info(f'第 {num + 1} 次绑定操作...')
-        if args.设备类型 == '网关':
-            res = app_request(accessToken, bind_url, bind_data, log_path)
+        try:
+            get_log(log_path).info(f'第 {num + 1} 次解绑操作...')
+            res = app_request(accessToken, unbind_url, unbind_data, log_path)
             if json.loads(res)["result"] == 1:
-                get_log(log_path).info(f" --- APP发送绑定请求成功")
+                get_log(log_path).info(f" --- APP发送解绑请求成功")
                 time.sleep(3)
                 group_id = db_tool.getAll(sql_group_id)
                 if group_id:
-                    get_log(log_path).error(f" --- 设备绑定成功")
+                    get_log(log_path).error(f" !!! 设备解绑失败")
                 else:
-                    get_log(log_path).info(f" !!! 设备绑定失败")
+                    get_log(log_path).info(f" --- 设备解绑成功")
             else:
-                get_log(log_path).error(f" !!! APP发送绑定请求失败")
-        elif args.设备类型 == 'wifi灯带':
-            res = app_request(accessToken, getConnectNetworkToken_url, getConnectNetworkToken_data, log_path)
-            token = json.loads(res)["params"]["token"]
-            asyncio.run(light_strip_bluetooth_connection(args, token, log_path))
-            get_log(log_path).info(f" --- 等待设备配网中")
-            time.sleep(30)
-            res = app_request(accessToken, bind_url, bind_data, log_path)
-            if json.loads(res)["result"] == 1:
-                get_log(log_path).info(f" --- APP发送绑定请求成功")
-                res = app_request(accessToken, getDevicePermission_url, getDevicePermission_data, log_path)
+                get_log(log_path).error(f" !!! APP发送解绑请求失败")
+            time.sleep(args.测试间隔时长)
+            get_log(log_path).info(f'第 {num + 1} 次绑定操作...')
+            if args.设备类型 == '网关':
+                res = app_request(accessToken, bind_url, bind_data, log_path)
                 if json.loads(res)["result"] == 1:
-                    app_request(accessToken, getDevices_url, getDevices_data, log_path)
+                    get_log(log_path).info(f" --- APP发送绑定请求成功")
                     time.sleep(3)
                     group_id = db_tool.getAll(sql_group_id)
                     if group_id:
-                        get_log(log_path).error(f" --- 设备解绑成功")
+                        get_log(log_path).error(f" --- 设备绑定成功")
                     else:
-                        get_log(log_path).info(f" !!! 30S内设备解绑失败")
+                        get_log(log_path).info(f" !!! 设备绑定失败")
+                else:
+                    get_log(log_path).error(f" !!! APP发送绑定请求失败")
+            elif args.设备类型 == 'wifi灯带':
+                res = app_request(accessToken, getConnectNetworkToken_url, getConnectNetworkToken_data, log_path)
+                token = json.loads(res)["params"]["token"]
+                asyncio.run(light_strip_bluetooth_connection(args, token, log_path))
+                get_log(log_path).info(f" --- 等待设备配网中")
+                time.sleep(30)
+                res = app_request(accessToken, bind_url, bind_data, log_path)
+                if json.loads(res)["result"] == 1:
+                    get_log(log_path).info(f" --- APP发送绑定请求成功")
+                    res = app_request(accessToken, getDevicePermission_url, getDevicePermission_data, log_path)
+                    if json.loads(res)["result"] == 1:
+                        app_request(accessToken, getDevices_url, getDevices_data, log_path)
+                        time.sleep(3)
+                        group_id = db_tool.getAll(sql_group_id)
+                        if group_id:
+                            get_log(log_path).error(f" --- 设备绑定成功")
+                        else:
+                            get_log(log_path).info(f" !!! 30S内设备绑定失败")
+                else:
+                    get_log(log_path).error(f" !!! APP发送绑定请求失败")
             else:
-                get_log(log_path).error(f" !!! APP发送绑定请求失败")
-        else:
-            get_log(log_path).error(f" !!! 不支持此设备类型的绑定操作")
-        time.sleep(args.测试间隔时长)
+                get_log(log_path).error(f" !!! 不支持此设备类型的绑定操作")
+            time.sleep(args.测试间隔时长)
+        except Exception as e:
+            get_log(log_path).error(f" !!! 发生不可预知错误，将直接跳过本次轮询：{e}")
+            time.sleep(2)

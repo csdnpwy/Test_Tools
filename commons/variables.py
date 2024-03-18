@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24031419
+version = 24031816
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -132,12 +132,12 @@ vDev214 = {
     '子设备IP地址1_v': '10.54.57.214',
     '子设备IP地址2_v': '10.54.57.215',
     '子设备IP地址3_v': '10.54.57.217',
-    'zigbee设备did后缀_v': '1c34f1fffef0f10f',
-    'zigbee设备did后缀2_v': '1c34f1fffeec7688',
-    'zigbee设备did后缀3_v': '1c34f1fffeec707a',
-    'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:f0:f1:0f',
-    'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:76:88',
-    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:70:7a'
+    'zigbee设备did后缀_v': '1c34f1fffef0f20a',
+    'zigbee设备did后缀2_v': '1c34f1fffeec8763',
+    'zigbee设备did后缀3_v': '94deb8fffecb08f8',
+    'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:f0:f2:0a',
+    'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:87:63',
+    'zigbee设备did后缀3IEEE_v': '94:de:b8:ff:fe:cb:08:f8'
 }
 vDev216 = {
     '子设备IP地址1_v': '10.54.57.216',
@@ -161,6 +161,7 @@ readme_test = "**************************** 使用说明 ***********************
               "23121419：修订GUI图标以及增加菜单按钮\n" \
               "24010310：修订预生产环境信息\n" \
               "24012516：修订56、58测试环境信息\n" \
+              "24031816：修订虚拟设备4did后缀信息\n" \
               "\n" \
               "测试链路时长获取：\n" \
               "1、通过群组和联动的方式控制一个或多个测试设备（默认网关下挂所有设备）并监测全链路各个节点的用时；\n" \
