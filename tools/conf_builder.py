@@ -64,12 +64,18 @@ def conf_builder(args, log_path):
         homeId = res[0]['parent_id']
         room = res[0]['name']
         roomID = res[0]['id']
+        sql_room_2nd = f"select id, name  from newiot_group ng  where parent_id = '{homeId}' and id != '{roomID}' limit 1"
+        res = db_tool.getAll(sql_room_2nd)
+        # room_2nd = res[0]['name']
+        room_2nd_id = res[0]['id']
         app = {
             '乐比邻账号_v': f'{args.用户名}',
             '乐比邻密码_v': f'{args.密码}',
             '设备所在住家ID_v': f'{homeId}',
             '房间id': f'{room}id',
-            '房间_id_v': f'{roomID}'
+            '房间_id_v': f'{roomID}',
+            # '房间2id': f'{room_2nd}id',
+            '房间2_id_v': f'{room_2nd_id}'
         }
         replacements.update(app)
         get_log(log_path).info(f'    ----    数据库连通性正常')

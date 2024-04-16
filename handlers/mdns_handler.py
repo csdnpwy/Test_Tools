@@ -1,3 +1,4 @@
+import datetime
 import time
 
 from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser
@@ -41,12 +42,12 @@ if __name__ == "__main__":
     port = 49853
     properties = {
         "fb": "LV20",
-        "bd": "EC2E0AD2305CC056FC6975664896CFE8",
+        "bd": "2FDC489DF3C08DC082F94C3873286D24",
         "mac": "24140702c4f1",
         "md": "HAZB-CE-R15-112",
         "smd": "HAZB-CE-R15-112",
         "mf": "LEELEN",
-        "sn": "031525E019000073",
+        "sn": "031525E019000022",
         "role": "standby",
         "ver": "2.41",
         "autoSiid": "3",
@@ -74,12 +75,13 @@ if __name__ == "__main__":
             def add_service(self, zeroconf, type, name):
                 info = zeroconf.get_service_info(type, name)
                 IP = info.parsed_addresses()[0]
+                current_time = datetime.datetime.now()
                 if name == self.local_name:
                     # print(f"Local Service: {name} , service info: {info}")
-                    print(f"Local Service: {name} IP: {IP} Port: {port}, service info: {info}")
+                    print(f"{current_time} -- Local Service: {name} IP: {IP} Port: {port}, service info: {info}")
                 else:
                     # print(f"Other Service: {name} , service info: {info}")
-                    print(f"Other Service: {name} IP: {IP} Port: {port}, service info: {info}")
+                    print(f"{current_time} -- Other Service: {name} IP: {IP} Port: {port}, service info: {info}")
 
             def update_service(self, zeroconf, type, name):
                 pass
@@ -92,9 +94,9 @@ if __name__ == "__main__":
         # 发现服务
         mdns_manager.discover_services(listener)
 
-        time.sleep(10)
+        # time.sleep(10)
 
-        # input("Press enter to unregister...\n\n")
+        input("Press enter to unregister...\n\n")
     finally:
         # 注销服务
         mdns_manager.unregister_service()
