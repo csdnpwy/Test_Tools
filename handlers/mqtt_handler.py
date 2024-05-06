@@ -111,16 +111,16 @@ class MQTTClient:
 
 if __name__ == "__main__":
     username = "HA-CE-R31-001"
-    password = hashlib.sha256('jhfeq6vsxonjjlfb'.encode('utf-8')).hexdigest()
+    password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
     log_path = f"D:\\pwy_log\\Leelen-ATT\\conf_builder_test.txt"
 
     # 创建MQTT客户端
     mqtt_client = MQTTClient(log_path, "iottest.leelen.net", username=username, password=password,
-                             client_id="12300001000000000008")
+                             client_id="12300001000000000001")
 
     # 连接到MQTT代理
     mqtt_client.connect()
-    # time.sleep(5)
+    time.sleep(5)
     #
     # # 订阅主题
     # mqtt_client.subscribe("lliot/receiver/12300001000000000006")

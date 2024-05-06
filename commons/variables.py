@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24041910
+version = 24050615
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -202,6 +202,11 @@ readme_develop = "**************************** 使用说明 ********************
                  "属性生成器：\n" \
                  "1、根据真实设备获取的属性值自动生成可传入虚拟设备格式的属性字符串；\n" \
                  "修订记录；\n" \
+                 "\n" \
+                 "合并Excel：\n" \
+                 "1、多个Excel合并操作；\n" \
+                 "修订记录；\n" \
+                 "24050615：初版发行\n" \
                  "\n"
 
 profile_example = "{\n  " \

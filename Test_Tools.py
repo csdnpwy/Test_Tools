@@ -11,6 +11,7 @@ from handlers.check_for_update import check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
 from tools.direct_con_dev import direct_con_dev
+from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.property_builder import property_builder
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
@@ -178,6 +179,12 @@ def main():
     profile_parser.add_argument('真实设备属性值', help='', type=str, widget='Textarea', gooey_options={'height': 300},
                                 default=f"示例--抓包中subDevices值：\n{default_txt}")
 
+    excel_parser = subs.add_parser('合并Excel', help='合并Excel为一个文件')
+    env = excel_parser.add_argument_group("必填参数", gooey_options={'columns': 1})
+    env.add_argument('Excel文件夹', type=str, widget='DirChooser', default=config_manager.get_value('合并Excel', 'Excel文件夹'))
+    env.add_argument('保留列名', type=str, widget='TextField', help='All：保留所有，多个用空格分开（eg：列名1 列名2 列名3）',
+                     default=config_manager.get_value('合并Excel', '保留列名', fallback='All'))
+
     log_path = f"{log_dir}check_for_update.txt"
     if not check_for_update(log_path):
         args = parser.parse_args()
@@ -203,6 +210,9 @@ def main():
         elif args.tools == '直连桩注册绑定':
             log_path = f"{log_dir}direct_connect_dev_{day}.txt"
             direct_con_dev(args, log_path)
+        elif args.tools == '合并Excel':
+            log_path = f"{log_dir}excel_tool_{day}.txt"
+            excel_tool(args, log_path)
         else:
             pass
 
