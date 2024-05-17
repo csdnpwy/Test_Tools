@@ -9,16 +9,19 @@ from handlers.data_encrypt_handler import hmac_encode
 
 
 class TCPClient:
-    def __init__(self, server_host, server_port):
+    def __init__(self, server_host, server_port, type='tcp'):
         self.ssl_socket = None
         self.server_host = server_host
         self.server_port = server_port
-        self.client_socket = socket.socket(socket.AF_INET,
-                                           socket.SOCK_STREAM)  # AF_INET：使用IPv4地址族  SOCK_STREAM：面向连接的TCP协议
+        # AF_INET：使用IPv4地址族  SOCK_STREAM：面向连接的TCP协议
+        if type == 'udp':
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        else:
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def connect(self):
         self.client_socket.connect((self.server_host, self.server_port))
-        print(f"Connected to {self.server_host}:{self.server_port}")
+        # print(f"Connected to {self.server_host}:{self.server_port}")
 
     def send_data(self, message):
         self.client_socket.send(message)
@@ -50,7 +53,7 @@ class TCPClient:
 
     def close(self):
         self.client_socket.close()
-        print("Connection closed")
+        # print("Connection closed")
 
 
 if __name__ == '__main__':

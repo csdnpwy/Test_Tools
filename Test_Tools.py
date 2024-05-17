@@ -16,6 +16,7 @@ from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.property_builder import property_builder
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
 from tools.t2_led import t2_led
+from tools.web_ota_tool import web_ota_tool
 
 running = True
 
@@ -39,11 +40,10 @@ def main():
     parser = GooeyParser(description=settings_msg)
     subs = parser.add_subparsers(help='tools', dest='tools')
 
-    readme_parser = subs.add_parser('******测试助手*******')
+    readme_parser = subs.add_parser('******家居助手*******')
     default_txt = readme_test
     readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
                                default=f"{default_txt}")
-
     time_parser = subs.add_parser('测试链路时长获取')
     env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
     scenes = ["iotpre", "iottest", "56", "58"]
@@ -110,6 +110,28 @@ def main():
                        default=config_manager.get_value('解绑绑定压测', '测试间隔时长', fallback='1'))
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('解绑绑定压测', '测试轮询次数', fallback='1'))
+
+    readme_parser = subs.add_parser('****海外门禁助手****')
+    default_txt = readme_access_ctl
+    readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
+                               default=f"{default_txt}")
+    web_ota = subs.add_parser('web-OTA压测')
+    env = web_ota.add_argument_group('测试环境信息', gooey_options={'columns': 2})
+    env.add_argument('PDU_IP', type=str, widget='TextField',
+                     default=config_manager.get_value('web-OTA压测', 'PDU_IP', fallback='192.168.1.250'))
+    lock = [1, 2, 3, 4]
+    env.add_argument('PDU插座号', type=int, widget='Dropdown', choices=lock,
+                     default=config_manager.get_value('web-OTA压测', 'PDU插座号', fallback=1))
+    env.add_argument('主机IP', type=str, widget='TextField',
+                     default=config_manager.get_value('web-OTA压测', '主机IP', fallback='192.168.1.100'))
+    package = web_ota.add_argument_group("升级信息", gooey_options={'columns': 1})
+    package.add_argument('升级包路径', type=str, widget='FileChooser', default=config_manager.get_value('web-OTA压测', '升级包路径'))
+    package.add_argument('软件版本', type=str, widget='TextField', default=config_manager.get_value('web-OTA压测', '软件版本'))
+    other = web_ota.add_argument_group('其他信息', gooey_options={'columns': 2})
+    other.add_argument('下电区间', type=str, widget='TextField', help='点击升级后在此区间轮询下电',
+                       default=config_manager.get_value('web-OTA压测', '下电区间', fallback='2-5'))
+    other.add_argument('压测次数', type=int, widget='TextField', help='下电-上电为一轮询',
+                       default=config_manager.get_value('web-OTA压测', '压测次数', fallback='100'))
 
     readme_parser = subs.add_parser('******开发助手*******')
     default_txt = readme_develop
@@ -213,6 +235,9 @@ def main():
         elif args.tools == '合并Excel':
             log_path = f"{log_dir}excel_tool_{day}.txt"
             excel_tool(args, log_path)
+        elif args.tools == 'web-OTA压测':
+            log_path = f"{log_dir}web_ota_{day}.txt"
+            web_ota_tool(args, log_path)
         else:
             pass
 
