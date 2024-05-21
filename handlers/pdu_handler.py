@@ -42,3 +42,7 @@ def ctl_pdu(ip, port=17722, lock=1, ctl='open'):
     cmd = cmd_mapping[f"lock_{lock}_{ctl}"]
     client.send_data(cmd)
     client.close()
+
+
+if __name__ == '__main__':
+    ctl_pdu('10.58.66.158', lock=2)

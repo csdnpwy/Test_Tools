@@ -49,9 +49,9 @@ def web_ota_tool(args, log_path):
     time_max = args.下电区间.split('-')[1]
     pdu_ip = args.PDU_IP
     lock = args.PDU插座号
+    selenium_wrapper = SeleniumWrapper(log_path=log_path, driver_path=driver_path)
     for num in range(0, nums):
         get_log(log_path).info(f'    ----    开始执行第{num+1}轮测试...')
-        selenium_wrapper = SeleniumWrapper(driver_path=driver_path)
         # 打开URL
         get_log(log_path).info(f'        ----        打开主机配置页面并登录...')
         selenium_wrapper.open_url(url)
@@ -77,7 +77,13 @@ def web_ota_tool(args, log_path):
         selenium_wrapper.wait_for_element(By.ID, file_id)
         selenium_wrapper.send_keys(By.ID, file_id, args.升级包路径)
         time.sleep(1)
-        selenium_wrapper.click_element(By.CLASS_NAME, upgrade_class_name)
+        status = selenium_wrapper.check_response_status(By.CLASS_NAME, upgrade_class_name, f'/cgi-bin/upload.cgi')
+        # 理论上0不能算成功，但发现成功的机子抓不到/cgi-bin/upload.cgi，所以暂时放过，即认定失败是抓得到且状态码非200
+        if status == 200 or status == 0:
+            get_log(log_path).info(f'        ----        成功触发升级...')
+        else:
+            get_log(log_path).error(f'        !!!!        触发升级失败，返回状态码{status}...')
+            raise CustomError("测试异常！")
         time_interval = int(time_min) + (num % (int(time_max) - int(time_min) + 1))
         get_log(log_path).info(f'        ----        {time_interval}S后进行断电操作...')
         time.sleep(time_interval)
@@ -98,7 +104,8 @@ def web_ota_tool(args, log_path):
                 break
         get_log(log_path).info(f'        ----        进行上电操作...')
         ctl_pdu(pdu_ip, lock=lock)
-        time.sleep(15)
+        get_log(log_path).info(f'        ----        {args.间隔时长}后进行机器连通检测并进入下一轮测试...')
+        time.sleep(args.间隔时长)
         for i in range(0, 3):
             ping_res = ping(f"{args.主机IP}")
             if ping_res is not None:
@@ -108,11 +115,11 @@ def web_ota_tool(args, log_path):
             else:
                 get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}未能ping通，无正常上电，重试发送上电操作!')
                 ctl_pdu(pdu_ip, lock=lock)
-                time.sleep(15)
+                time.sleep(args.间隔时长)
                 if i == 2:
                     get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}无正常上电，重试3次均异常，停止测试!')
                     raise CustomError("测试异常！")
-        # 关闭浏览器
-        get_log(log_path).info(f'        ----        关闭浏览器...')
-        selenium_wrapper.close()
+    # 关闭浏览器
+    get_log(log_path).info(f'Step 3：测试结束，关闭浏览器...')
+    selenium_wrapper.close()
 
