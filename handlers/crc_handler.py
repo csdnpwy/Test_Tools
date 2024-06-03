@@ -24,7 +24,9 @@ def calculate_crc(data, crc_type='crc8-rohc'):
     else:
         crc_hex = format(crc_value, '08X')
 
-    return crc_hex
+    crc_hex_reversed = ''.join(reversed([crc_hex[i:i + 2] for i in range(0, len(crc_hex), 2)]))
+
+    return crc_hex_reversed
 
 
 """

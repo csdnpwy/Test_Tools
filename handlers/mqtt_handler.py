@@ -26,6 +26,8 @@ class MQTTClient:
             self.client.on_message = self.on_message_t2_led
         elif tool == 'direct_con_dev':
             self.client.on_message = self.on_message_direct_con_dev
+        elif tool == 'sensor_link_duration':
+            self.client.on_message = self.on_message_sensor_link_duration
         else:
             self.client.on_message = self.on_message
 
@@ -37,6 +39,16 @@ class MQTTClient:
 
     def on_message(self, client, userdata, message):
         get_log(self.log_path).debug(f"Received message '{message.payload.decode()}' on topic '{message.topic}'")
+
+    def on_message_sensor_link_duration(self, client, userdata, message):
+        playload = str(message.payload).replace(" ", "")
+        if "lliot/fiids_report" and '"fiid":49408,' in message.topic:
+            get_log(self.log_path).debug(f"子设备上报状态：{message.topic}: {playload}")
+            current_time = datetime.now()
+            with open(f'{os.path.dirname(self.log_path)}\\fiids_report.txt', 'a') as file:
+                file.write(f'{current_time} -- {message.topic} -- {playload}\n')
+        else:
+            get_log(self.log_path).debug(f"接收到报文：{message.topic}: {playload}")
 
     def on_message_t2_led(self, client, userdata, message):
         playload = str(message.payload).replace(" ", "")

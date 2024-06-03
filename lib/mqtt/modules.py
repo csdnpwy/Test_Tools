@@ -39,6 +39,34 @@ def dmgr_reg(args, module=dev_manage_moduleID, seq=666):
     return res
 
 
+def dmgr_reg_sensor_link_duration(stake_did, softModel, profileId, module=dev_manage_moduleID, seq=666):
+    """
+    sensor_link_duration工具生成设备注册mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、产品_软件模型_profileId】
+    :param softModel:
+    :param profileId:
+    :param module:
+    :param seq:
+    :param stake_did:
+    :return: 设备注册mqtt报文、回复报文
+    """
+    req_payload = None
+    rsp_payload = {
+        "method": "dmgr.reg",
+        "src": f"{stake_did}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": {
+            "did": f"{stake_did}",
+            "softModel": f"{softModel}",
+            "profileId": profileId
+        },
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
 def dmgr_checkBind(args, module=dev_manage_moduleID, seq=666):
     """
     生成设备绑定mqtt报文和回复报文
@@ -284,6 +312,8 @@ def dmgr_writePIIDS(args, module=dev_manage_moduleID, seq=666):
     return res
 
 
+# ================================================子设备操作==============================================================
+
 def dmgr_subDeviceOnlineStatus(args, module=dev_manage_moduleID, seq=666):
     """
     子设备在线状态上报mqtt报文和回复报文
@@ -387,6 +417,118 @@ def dmgr_reportPIIDS(args, module=dev_manage_moduleID, seq=666):
                 "siid": 0,
                 "piids": [{
                     "piid": 273,
+                    "value": 0
+                }]
+            }]
+        },
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+def dmgr_subDeviceOnlineStatus_rtczSensor(args, module=dev_manage_moduleID, seq=666):
+    """
+    子设备在线状态上报mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 子设备在线状态上报mqtt报文、回复报文
+    """
+    req_payload = {
+        "dst": f"{args.传感器所在网关}",
+        "message": "正确应答",
+        "method": "dmgr.subDeviceOnlineStatus",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.subDeviceOnlineStatus",
+        "src": f"{args.传感器所在网关}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": [{
+            "did": "000b20128cf681fffea5cpwy",
+            "status": 1
+        }],
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
+def dmgr_reportAddDevice_rtczSensor(args, module=dev_manage_moduleID, seq=667):
+    """
+    添加子设备mqtt报文和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 添加子设备mqtt报文、回复报文
+    """
+    req_payload = {
+        "dst": f"{args.传感器所在网关}",
+        "message": "正确应答",
+        "method": "dmgr.reportAddDevice",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.reportAddDevice",
+        "src": f"{args.传感器所在网关}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": {
+            "businessId": "FA2F64CC-2C62-462F-B116-54929539231D",
+            "subDevices": [{
+                "errCode": "null",
+                "fatherDid": f"{args.传感器所在网关}",
+                "did": f"000b20128cf681fffea5cpwy",
+                "profileId": 282,
+                "manufacturer": "MULTIR",
+                "productModel": "HAZB-SD-R71-001",
+                "softModel": "HAZB-SD-R71-001",
+                "softVersion": "MAIN:0.2",
+                "productSn": "",
+                "softProjectNo": "HA-2020"
+            }]
+        },
+        "seq": seq
+    }
+    res = {"req": req_payload, "rsp": rsp_payload}
+    return res
+
+
+def dmgr_reportPIIDS_rtczSensor(args, module=dev_manage_moduleID, seq=668):
+    """
+    上报网络短地址属性和回复报文
+    适配条件：GUI需包含【测试环境、Did、subDid】
+    :param module:
+    :param seq:
+    :param args:
+    :return: 子上报网络短地址属性和回复报文
+    """
+    req_payload = {
+        "dst": f"{args.传感器所在网关}",
+        "message": "正确应答",
+        "method": "dmgr.reportPIIDS",
+        "result": 1,
+        "seq": seq,
+        "src": f"{module}"
+    }
+    rsp_payload = {
+        "method": "dmgr.reportPIIDS",
+        "src": f"{args.传感器所在网关}",
+        "dst": f"{module}",
+        "version": "V1.0",
+        "params": {
+            "did": f"000b20128cf681fffea5cpwy",
+            "siids": [{
+                "siid": 2,
+                "piids": [{
+                    "piid": 236,
                     "value": 0
                 }]
             }]

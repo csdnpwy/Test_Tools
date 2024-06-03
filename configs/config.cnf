@@ -1,0 +1,201 @@
+# 注：所以英文命名统一用小写
+# 桩信息-直连设备
+;Zigbee无线网关3.0桩
+[HAZB-CE-R15-112]
+did = 0001200424140702c4f1
+;软件版本 piid=3
+soft_version = MAIN-SSD201:2.39,NCP-EFR32:1.02
+;工厂名称 piid=4
+manufacturer = LEELEN
+;MAC地址 piid=5
+mac = 24:14:07:02:c4:f1
+;软件产品型号 piid=6
+line_soft_model = HAZB-CE-R15-112
+;坐标 piid=7
+location = 116.159034,40.360058
+;SN piid=10
+product_sn = 031525E019000066
+;软件型号 piid=18
+soft_model = HAZB-CE-R15-112
+;软件项目号 piid=19
+soft_project_no = HA-2117-03
+;WIFI名称 piid=20
+wifi_name = ATE
+;IP piid=88
+ip = 192.168.1.100
+;住家id配置 piid=162
+groupid =  1059608211919732901
+;产品型号 piid=239
+model = HAZB-CE-R15-112
+;住家地址 piid=300 (暂存)
+;硬件平台 piid=330
+hardware_platform = SSD201
+;转发能力
+fb = LV20
+;承担角色
+role = standby
+;版本
+ver = 2.41
+;权重
+wt = -10.000000
+;自动化服务siid
+autosiid = 3
+
+;WiFi D2智能幻彩灯带桩
+[HA-LF-R92-0900]
+did = 0001201becda3b13a981
+;软件版本 piid=3
+soft_version = MAIN-ESP32C3:1.08
+;工厂名称 piid=4
+manufacturer = LEELEN
+;MAC地址 piid=5
+mac = ec:da:3b:13:a9:81
+;软件产品型号 piid=6
+line_soft_model = HA-LF-R92-0900
+;SN piid=10
+product_sn = 034215E01U000030
+;软件型号 piid=18
+soft_model = HA-LF-R92-0900
+;软件项目号 piid=19
+soft_project_no = HA-2315
+;WIFI名称 piid=20
+wifi_name = ATE
+;IP piid=88
+ip = 192.168.1.101
+;产品型号 piid=239
+model = HA-LF-R92-0900
+;缓起缓灭时间 piid=248
+slow_up_down_time = {"slowUpTime":3,"slowDownTime":3}
+
+# mdns相关信息
+[mdns]
+service_type = _iot-gateway._tcp.local.
+port = 49853
+
+# 子设备信息
+# 字段解析
+;设备类型 device_type = 0x0269
+;软件序号 soft_no = 0
+;工厂名称 manufacture_name = LEELEN
+;工厂编码 manufacture_code = 0x123c
+;软件版本 manufacture_version = MAIN-EFR32MG21:1.10
+;软件产品型号 product_label = HAZB-AD-R82-001
+;软件型号 model_identifier = HAZB-AD-R82-001
+;产品SN product_sn = 032609E01E000071
+;硬件版本 hardware_ver =
+;设备标识符 device_id = 0x010C
+;软件项目号 soft_pro_no = HA-2206
+;端点号(Endpoint Number) ep_num =
+;第三方版本 third_version = 5.0.0
+;app版本 application_version = 0x00
+;设备容量 device_capacity = 0x00000000
+;区域类型 zone_type = 0x000D
+;设备描述文档ID profileId = 319
+
+# did前缀
+[did_prefix]
+T2筒射灯 = 0001201b
+蓝调离线语音面板 = 00012022
+P10-4路6按键开关面板 = 0001200d
+人体存在传感器 = 000b2012
+
+[T2筒射灯]
+;设备描述文档ID
+profileid = 319
+;设备类型
+device_type = 0x0269
+;软件序号
+soft_no = 1,0
+;工厂名称
+manufacture_name = LEELEN
+;工厂编码
+manufacture_code = 0x123c
+;软件版本
+manufacture_version = MAIN-EFR32MG21:1.10
+;软件产品型号
+product_label = HAZB-PS-R84-001
+;软件型号
+model_identifier = HAZB-AD-R82-001
+;产品SN
+product_sn = 032609E01E000071
+;设备id
+device_id = 0x010C
+;软件项目号
+soft_pro_no = HA-2206
+;app版本
+application_version = 0x01
+
+[蓝调离线语音面板]
+;设备类型
+device_type = 0x218
+;软件序号
+soft_no = 1
+;工厂名称
+manufacture_name = LEELEN
+;工厂编码
+manufacture_code = 0x123c
+;软件版本
+manufacture_version = MAIN-EFR32MG21:1.04
+;软件产品型号
+product_label = HAZB-AD-B32-4103
+;软件型号
+model_identifier = HAZB-AD-B32-4103
+;产品SN
+product_sn = 032351E01E000021
+;软件项目号
+soft_pro_no = HA-2203-06
+;app版本
+application_version = 0x01
+
+[P10-4路6按键开关面板]
+;设备描述文档ID
+profileid = 215
+;设备类型
+device_type = 0x213
+;软件序号
+soft_no = 2,0
+;工厂名称
+manufacture_name = LEELEN
+;工厂编码
+manufacture_code = 0x123c
+;软件版本
+manufacture_version = MAIN-EFR32MG21:1.02
+;软件产品型号
+product_label = HAZB-AD-B32-6201
+;软件型号
+model_identifier = HAZB-AD-B32-6201
+;产品SN
+product_sn = 032058E019000017
+;软件项目号
+soft_pro_no = HA-2203-01
+;app版本
+application_version = 0x01
+
+[人体存在传感器]
+;设备描述文档ID
+profileid = 164
+;设备类型
+device_type = 0x02a4
+;软件序号
+soft_no = 0
+;工厂名称
+manufacture_name = MultIR
+;工厂编码
+manufacture_code = 0x5555
+;软件版本
+manufacture_version = MAIN:0.3
+;软件产品型号
+product_label = HAZB-SD-R71-001
+;软件型号
+model_identifier = HAZB-SD-R71-001
+;设备id
+device_id = 0x0107
+;软件项目号
+soft_pro_no = HA-2020
+;app版本
+application_version = 0x04
+;端点号(Endpoint Number)
+ep_num = 0x01
+;第三方版本
+third_version = 0.3.0
+

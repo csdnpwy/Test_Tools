@@ -5,6 +5,7 @@ version = 24052115
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+conf_file_path = os.path.join(project_root, "configs", "config.cnf")
 log_dir = "D:\\pwy_log\\Leelen-ATT\\"
 hfs_url = 'http://10.58.71.56/'
 item_about = {
@@ -70,22 +71,26 @@ iottest = {
 }
 iot56 = {
     '云端环境_v': 'http://iotst-home.leelen.net:80',
+    # '云端环境_v': 'http://10.160.0.56:80',
     '云端DB_用户名_v': 'leelendb',
     '云端DB_密码_v': 'leelendb',
     '云端DB_Host_v': '10.160.0.55',
     '云端DB_Port_v': '3306',
     '云端DB_库名_v': 'account',
     '云端MQTT_Host_v': 'iotst-home.leelen.net',
+    # '云端MQTT_Host_v': '10.160.0.56',
     'MQTT常用服务器端口_v': '1883'
 }
 iot58 = {
     '云端环境_v': 'http://iotst-home2.leelen.net:80',
+    # '云端环境_v': 'http://10.160.0.58:80',
     '云端DB_用户名_v': 'leelendb',
     '云端DB_密码_v': 'leelendb',
     '云端DB_Host_v': '10.160.0.57',
     '云端DB_Port_v': '3306',
     '云端DB_库名_v': 'account',
     '云端MQTT_Host_v': 'iotst-home2.leelen.net',
+    # '云端MQTT_Host_v': '10.160.0.58',
     'MQTT常用服务器端口_v': '1883'
 }
 envs = {

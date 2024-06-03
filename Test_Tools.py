@@ -14,6 +14,7 @@ from tools.direct_con_dev import direct_con_dev
 from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.property_builder import property_builder
+from tools.link_duration import link_duration
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
 from tools.t2_led import t2_led
 from tools.web_ota_tool import web_ota_tool
@@ -112,6 +113,46 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('解绑绑定压测', '测试轮询次数', fallback='1'))
 
+    time_parser = subs.add_parser('链路时长监控')
+    env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
+    scenes = ["iotpre", "iottest", "56", "58"]
+    env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
+                     default=config_manager.get_value('链路时长监控', '测试环境', fallback='iotpre'))
+    vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
+             "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
+             "虚拟设备5（216|218|219）"]
+    env.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
+                     default=config_manager.get_value('链路时长监控', '虚拟设备'))
+    env.add_argument('APP用户名', type=str, widget='TextField',
+                     default=config_manager.get_value('链路时长监控', 'APP用户名', fallback='15606075512'))
+    env.add_argument('APP密码', type=str, widget='TextField',
+                     default=config_manager.get_value('链路时长监控', 'APP密码', fallback='test'))
+    other = time_parser.add_argument_group('测试关键信息', gooey_options={'columns': 3})
+    scenes = ["联动场景", "定时场景", "手动场景", "群组"]
+    other.add_argument('测试场景', type=str, widget='Dropdown', choices=scenes,
+                       default=config_manager.get_value('链路时长监控', '测试场景', fallback='联动场景'))
+    other.add_argument('测试间隔时长', type=float, widget='TextField',
+                       default=config_manager.get_value('链路时长监控', '测试间隔时长', fallback='30'), help='每轮测试超时时长')
+    other.add_argument('测试轮询次数', type=int, widget='TextField',
+                       default=config_manager.get_value('链路时长监控', '测试轮询次数', fallback='100'))
+    linkage = time_parser.add_argument_group('联动场景', gooey_options={'columns': 3})
+    conditions = ["人体存在传感器", "湿度传感器"]
+    linkage.add_argument('条件执行设备', type=str, widget='Dropdown', choices=conditions,
+                         default=config_manager.get_value('链路时长监控', '条件执行设备', fallback='人体存在传感器'))
+    num = [1, 2]
+    linkage.add_argument('条件设备个数', type=int, widget='Dropdown', choices=num,
+                         default=config_manager.get_value('链路时长监控', '条件设备个数', fallback=1))
+    linkage.add_argument('条件设备所在网关', type=str, widget='TextField',
+                         default=config_manager.get_value('链路时长监控', '条件设备所在网关', fallback=''))
+    actions = ["T2筒射灯", "所有下挂设备"]
+    linkage.add_argument('动作执行设备', type=str, widget='Dropdown', choices=actions,
+                         default=config_manager.get_value('链路时长监控', '动作执行设备', fallback='T2筒射灯'))
+    action = ["开关", "手动配置"]
+    linkage.add_argument('执行动作', type=str, widget='Dropdown', choices=action,
+                         default=config_manager.get_value('链路时长监控', '执行动作', fallback="开关"))
+    linkage.add_argument('动作设备所在网关', type=str, widget='TextField',
+                         default=config_manager.get_value('链路时长监控', '动作设备所在网关', fallback=''))
+
     readme_parser = subs.add_parser('****海外门禁助手****')
     default_txt = readme_access_ctl
     readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
@@ -127,7 +168,8 @@ def main():
     env.add_argument('主机IP', type=str, widget='TextField',
                      default=config_manager.get_value('web-OTA中断电压测', '主机IP', fallback='192.168.1.100'))
     package = web_ota.add_argument_group("升级信息", gooey_options={'columns': 1})
-    package.add_argument('升级包路径', type=str, widget='FileChooser', default=config_manager.get_value('web-OTA中断电压测', '升级包路径'))
+    package.add_argument('升级包路径', type=str, widget='FileChooser',
+                         default=config_manager.get_value('web-OTA中断电压测', '升级包路径'))
     package.add_argument('软件版本', type=str, widget='TextField', default=config_manager.get_value('web-OTA中断电压测', '软件版本'))
     other = web_ota.add_argument_group('其他信息', gooey_options={'columns': 2})
     other.add_argument('下电区间', type=str, widget='TextField', help='点击升级后在此区间轮询下电',
@@ -255,6 +297,9 @@ def main():
         elif args.tools == 'web-reboot':
             log_path = f"{log_dir}web_reboot_{day}.txt"
             web_reboot_tool(args, log_path)
+        elif args.tools == '链路时长监控':
+            log_path = f"{log_dir}链路时长监控_{day}.txt"
+            link_duration(args, log_path)
         else:
             pass
 

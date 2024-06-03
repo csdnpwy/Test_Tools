@@ -3,6 +3,8 @@
 from handlers.app_handler import *
 from commons.variables import *
 
+ver = "V1.0"
+businessId = "91910A54-E556-431D-90E8-433E77B36FBE"
 
 def getMyAllHomeInfo(args, log_path):
     """
@@ -20,7 +22,7 @@ def getMyAllHomeInfo(args, log_path):
     url = f"{envs[env]['云端环境_v']}/rest/app/community/smartHome/getMyAllHomeInfo"
     data = {
         "seq": 888,
-        "version": "V1.0"
+        "version": f"{ver}"
     }
     terminal_info = get_terminal_info(envs[env]['云端环境_v'], mysql_info, args.用户名, args.密码, log_path)
     accessToken = json.loads(terminal_info)['params']['accessToken']
@@ -78,6 +80,106 @@ def bindDevice(args, log_path):
     accessToken = json.loads(terminal_info)['params']['accessToken']
     res = app_request(accessToken, url, data, log_path)
     db_tool.dispose(1)
+    return res
+
+
+def encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=None, fiid=33024, dev_type="gw"):
+    """
+    子设备邀请或子设备取消邀请
+    :param dev_type: 区分网关gw或终端网关mini
+    :param log_path:
+    :param directDid:
+    :param args:
+    :param fiid: 33024=子设备邀请（默认）、33025=子设备取消邀请
+    :return: response
+    """
+    env = args.测试环境
+    uri = f"{envs[env]['云端环境_v']}/rest/app/community/encryptV1CtrlFIIDS"
+    if dev_type == "mini":
+        siid = 3
+    else:
+        siid = 2
+    if fiid == 33024:
+        fiids = [{"value": {"mode": 0, "timeOutSeconds": 60}, "fiid": 33024}]
+    elif fiid == 33025:
+        fiids = [{"fiid": 33025}]
+    else:
+        fiids = None
+    if directDid is None:
+        directDid = args.Did
+    else:
+        directDid = directDid
+    req_data = {
+        "seq": 100,
+        "version": f"{ver}",
+        "params": {
+            "did": f"{directDid}",
+            "directDid": f"{directDid}",
+            "siid": siid,
+            "fiids": fiids,
+            "ext": {
+                "phone": f"{args.APP用户名}",
+                "clientId": "1",
+                "expireTime": "60",
+                "appClientId": f"{json.loads(terminal_info)['params']['clientId']}"
+            },
+            "businessId": f"{businessId}"
+        }
+    }
+    accessToken = json.loads(terminal_info)['params']['accessToken']
+    res = app_request(accessToken, uri, req_data, log_path)
+    return res
+
+
+def getPhysicsDeviceList(args, log_path, terminal_info, groupId):
+    """
+    获取住家下的设备列表
+    :param log_path:
+    :param args:
+    :param groupId: 住家ID
+    :return: response
+    """
+    env = args.测试环境
+    uri = f"{envs[env]['云端环境_v']}/rest/app/community/smartHome/getPhysicsDeviceList"
+    req_data = {
+        "seq": 102,
+        "version": f"{version}",
+        "params": {
+            "groupId": groupId
+        }
+    }
+    accessToken = json.loads(terminal_info)['params']['accessToken']
+    res = app_request(accessToken, uri, req_data, log_path)
+    return res
+
+def delSubDevices(args, log_path, terminal_info, directDid, *dids):
+    """
+    删除子设备
+    :param directDid:
+    :param log_path:
+    :param args:
+    :param terminal_info: 终端信息（accessToken、clientId），默认每个请求都发起，建议传入，避免多次请求
+    :param dids: 预删除子设备did：did1,did2...didn
+    :return: response
+    """
+    env = args.测试环境
+    uri = f"{envs[env]['云端环境_v']}/rest/app/community/delSubDevices"
+    dids = list(dids)
+    req_data = {
+        "seq": 101,
+        "version": f"{version}",
+        "params": {
+            "directDid": f"{directDid}",
+            "dids": dids,
+            "ext": {
+                "expireTime": "10",
+                "appClientId": f"{json.loads(terminal_info)['params']['clientId']}"
+            },
+            "businessId": f"{businessId}"
+        }
+    }
+    accessToken = json.loads(terminal_info)['params']['accessToken']
+    res = app_request(accessToken, uri, req_data, log_path)
     return res
 
 # if __name__ == '__main__':

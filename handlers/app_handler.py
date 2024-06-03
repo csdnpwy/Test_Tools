@@ -40,9 +40,9 @@ def get_terminal_info(env, mysql_info, username, password, log_path):
     }
     ts = datetime.now().strftime('%Y%m%d%H%M%S')
     query_sql = f"select app_terminal_id, app_terminal_name, app_terminal_model from lbl_app_terminal_auth where account_id = (select id from lbl_app_account where phone = '{username}')"
-    db_tool = MyPymysqlPool(mysql_info)
-    res = db_tool.getAll(query_sql)
-    db_tool.dispose(1)
+    my_db = MyPymysqlPool(mysql_info)
+    res = my_db.getAll(query_sql)
+    my_db.dispose()
     # print(res)
     if res:
         post_data = {
