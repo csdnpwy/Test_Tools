@@ -7,7 +7,7 @@ from datetime import datetime
 
 from gooey import Gooey, GooeyParser
 from commons.variables import *
-from handlers.check_for_update import check_for_update
+from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
 from tools.direct_con_dev import direct_con_dev
@@ -278,6 +278,7 @@ def main():
             t2_colorTemperaTure(args, log_path)
         elif args.tools == '配置生成器':
             log_path = f"{log_dir}conf_builder_{day}.txt"
+            profile_check_for_update(log_path)
             conf_builder(args, log_path)
         elif args.tools == '属性生成器':
             log_path = f"{log_dir}conf_builder_{day}.txt"
@@ -293,9 +294,11 @@ def main():
             excel_tool(args, log_path)
         elif args.tools == 'web-OTA中断电压测':
             log_path = f"{log_dir}web_ota_{day}.txt"
+            driver_check_for_update(log_path)
             web_ota_tool(args, log_path)
         elif args.tools == 'web-reboot':
             log_path = f"{log_dir}web_reboot_{day}.txt"
+            driver_check_for_update(log_path)
             web_reboot_tool(args, log_path)
         elif args.tools == '链路时长监控':
             log_path = f"{log_dir}链路时长监控_{day}.txt"

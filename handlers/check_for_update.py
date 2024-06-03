@@ -25,10 +25,14 @@ def calculate_md5(file_path):
     return md5_hash.hexdigest()
 
 def check_for_update(log_path):
+    """
+    软件版本更新
+    :param log_path:
+    :return:
+    """
     current_version = version
     hfs = hfs_url
     conf_version = f"{hfs}version.ini"
-    profile = os.path.join(project_root, "template", "profile_template.txt")
     root = tk.Tk()
     root.withdraw()  # 隐藏主窗口
 
@@ -41,16 +45,6 @@ def check_for_update(log_path):
                 local_file.write(response.content)
             conf_reder = ConfigReader(f"{log_dir}version.ini")
             ver = conf_reder.get_value('info', 'version')
-            # 配置文件更新
-            profile_md5 = conf_reder.get_value('info', 'profileMD5').lower()
-            local_md5 = calculate_md5(profile).lower()
-            if local_md5 != profile_md5:
-                down_url = conf_reder.get_value('info', 'profile_url')
-                response = requests.get(down_url)
-                if response.status_code == 200:
-                    with open(profile, 'wb') as temp_file:
-                        temp_file.write(response.content)
-                        get_log(log_path).debug(f'配置文件更新成功！\nprofile_md5:{profile_md5}\nlocal_md5:{local_md5}')
             # 软件版本更新
             if int(ver) > int(current_version):
                 # 创建确认对话框
@@ -101,6 +95,70 @@ def check_for_update(log_path):
             return False
         else:
             return True
+
+def profile_check_for_update(log_path):
+    """
+    配置生成器 - 配置文件检查更新
+    :param log_path: 日志存储路径
+    """
+    conf_reder = ConfigReader(f"{log_dir}version.ini")
+    profile = os.path.join(project_root, "template", "profile_template.txt")
+    profile_md5 = conf_reder.get_value('info', 'profileMD5').lower()
+    local_md5 = "test"
+    # 如果目录不存在则创建
+    profile_dir = os.path.dirname(profile)
+    if not os.path.exists(profile_dir):
+        os.makedirs(profile_dir)
+        get_log(log_path).debug(f'创建目录: {profile_dir}')
+    elif not os.path.exists(profile):
+        pass
+    else:
+        local_md5 = calculate_md5(profile).lower()
+    if local_md5 != profile_md5:
+        down_url = conf_reder.get_value('info', 'profile_url')
+        response = requests.get(down_url)
+        if response.status_code == 200:
+            with open(profile, 'wb') as temp_file:
+                temp_file.write(response.content)
+                get_log(log_path).debug(f'配置文件更新成功！\nprofile_md5:{profile_md5}\nlocal_md5:{local_md5}')
+        else:
+            get_log(log_path).info(f'配置文件更新失败！请求内容{response.status_code}-{response.text}')
+            sys.exit()
+    else:
+        get_log(log_path).debug(f'已是最新配置文件模板！')
+
+
+def driver_check_for_update(log_path):
+    """
+    web-OTA中断电压测 & web-reboot - 浏览器驱动文件检查更新
+    :param log_path: 日志存储路径
+    """
+    conf_reder = ConfigReader(f"{log_dir}version.ini")
+    driver = os.path.join(project_root, "drivers", "chromedriver.exe")
+    driver_md5 = conf_reder.get_value('info', 'chromedriverMD5').lower()
+    local_md5 = "test"
+    # 如果目录不存在则创建
+    driver_dir = os.path.dirname(driver)
+    if not os.path.exists(driver_dir):
+        os.makedirs(driver_dir)
+        get_log(log_path).debug(f'创建目录: {driver_dir}')
+    # 如果文件不存在则创建一个空文件
+    elif not os.path.exists(driver):
+        pass
+    else:
+        local_md5 = calculate_md5(driver).lower()
+    if local_md5 != driver_md5:
+        down_url = conf_reder.get_value('info', 'chromedriver_url')
+        response = requests.get(down_url)
+        if response.status_code == 200:
+            with open(driver, 'wb') as temp_file:
+                temp_file.write(response.content)
+                get_log(log_path).debug(f'浏览器驱动文件更新成功！\nprofile_md5:{driver_md5}\nlocal_md5:{local_md5}')
+        else:
+            get_log(log_path).info(f'浏览器驱动文件更新失败！请求内容{response.status_code}-{response.text}')
+            sys.exit()
+    else:
+        get_log(log_path).debug(f'已是最新浏览器驱动文件！')
 
 
 # if __name__ == '__main__':
