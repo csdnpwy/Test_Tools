@@ -7,7 +7,8 @@ from datetime import datetime
 
 from gooey import Gooey, GooeyParser
 from commons.variables import *
-from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update
+from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update, \
+    config_check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
 from tools.direct_con_dev import direct_con_dev
@@ -136,7 +137,7 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('链路时长监控', '测试轮询次数', fallback='100'))
     linkage = time_parser.add_argument_group('联动场景', gooey_options={'columns': 3})
-    conditions = ["人体存在传感器", "湿度传感器"]
+    conditions = ["人体存在传感器", "温湿度传感器"]
     linkage.add_argument('条件执行设备', type=str, widget='Dropdown', choices=conditions,
                          default=config_manager.get_value('链路时长监控', '条件执行设备', fallback='人体存在传感器'))
     num = [1, 2]
@@ -302,6 +303,7 @@ def main():
             web_reboot_tool(args, log_path)
         elif args.tools == '链路时长监控':
             log_path = f"{log_dir}链路时长监控_{day}.txt"
+            config_check_for_update(log_path)
             link_duration(args, log_path)
         else:
             pass

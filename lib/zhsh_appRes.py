@@ -9,9 +9,10 @@ from lib.globalRes import get_did
 from lib.tcpRes import usr_tcp232_t2_tool
 
 
-def add_subDevices(args, log_path, dev_type, groupId, terminal_info, directDid=None, dev=0):
+def add_subDevices(args, log_path, dev_type, groupId, terminal_info, directDid=None, dev=0, direct_dev_type="gw"):
     """
     添加子设备，失败报错
+    :param direct_dev_type: 直连设备类型，gw：网关 mini：终端
     :param dev:
     :param terminal_info:
     :param args: GUI信息
@@ -74,19 +75,19 @@ def add_subDevices(args, log_path, dev_type, groupId, terminal_info, directDid=N
     if res == "55 01 83 01 E0 D8":
         time.sleep(3)
         # app触发子设备邀请
-        res = encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, dev_type="mini")
+        res = encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, direct_dev_type=direct_dev_type)
         if '"result":1,' in res:
             for i in range(0, 12):
                 dev_list = getPhysicsDeviceList(args, log_path, terminal_info, groupId)
                 if did in dev_list:
                     # 取消子设备邀请
-                    encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, fiid=33025, dev_type="mini")
+                    encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, fiid=33025, direct_dev_type=direct_dev_type)
                     break
                 else:
                     time.sleep(5)
             else:
                 # 取消子设备邀请
-                encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, fiid=33025, dev_type="mini")
+                encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=directDid, fiid=33025, direct_dev_type=direct_dev_type)
                 raise CustomError(f"{dev_type}添加失败！")
         else:
             raise CustomError(f"app触发子设备邀请失败！")

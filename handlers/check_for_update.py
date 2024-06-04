@@ -127,6 +127,37 @@ def profile_check_for_update(log_path):
     else:
         get_log(log_path).debug(f'已是最新配置文件模板！')
 
+def config_check_for_update(log_path):
+    """
+    链路时长监控 - config配置文件检查更新
+    :param log_path: 日志存储路径
+    """
+    conf_reder = ConfigReader(f"{log_dir}version.ini")
+    config = os.path.join(project_root, "configs", "config.cnf")
+    config_md5 = conf_reder.get_value('info', 'configMD5').lower()
+    local_md5 = "test"
+    # 如果目录不存在则创建
+    config_dir = os.path.dirname(config)
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+        get_log(log_path).debug(f'创建目录: {config_dir}')
+    elif not os.path.exists(config):
+        pass
+    else:
+        local_md5 = calculate_md5(config).lower()
+    if local_md5 != config_md5:
+        down_url = conf_reder.get_value('info', 'config_url')
+        response = requests.get(down_url)
+        if response.status_code == 200:
+            with open(config, 'wb') as temp_file:
+                temp_file.write(response.content)
+                get_log(log_path).debug(f'config配置文件更新成功！\nconfig_md5:{config_md5}\nlocal_md5:{local_md5}')
+        else:
+            get_log(log_path).info(f'配置文件更新失败！请求内容{response.status_code}-{response.text}')
+            sys.exit()
+    else:
+        get_log(log_path).debug(f'已是最新config配置文件！')
+
 
 def driver_check_for_update(log_path):
     """
@@ -153,7 +184,7 @@ def driver_check_for_update(log_path):
         if response.status_code == 200:
             with open(driver, 'wb') as temp_file:
                 temp_file.write(response.content)
-                get_log(log_path).debug(f'浏览器驱动文件更新成功！\nprofile_md5:{driver_md5}\nlocal_md5:{local_md5}')
+                get_log(log_path).debug(f'浏览器驱动文件更新成功！\ndirver_md5:{driver_md5}\nlocal_md5:{local_md5}')
         else:
             get_log(log_path).info(f'浏览器驱动文件更新失败！请求内容{response.status_code}-{response.text}')
             sys.exit()

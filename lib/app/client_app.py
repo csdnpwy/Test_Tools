@@ -83,10 +83,10 @@ def bindDevice(args, log_path):
     return res
 
 
-def encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=None, fiid=33024, dev_type="gw"):
+def encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=None, fiid=33024, direct_dev_type="gw"):
     """
     子设备邀请或子设备取消邀请
-    :param dev_type: 区分网关gw或终端网关mini
+    :param direct_dev_type: 直连设备类型，区分网关gw或终端网关mini
     :param log_path:
     :param directDid:
     :param args:
@@ -95,7 +95,7 @@ def encryptV1CtrlFIIDS(args, log_path, terminal_info, directDid=None, fiid=33024
     """
     env = args.测试环境
     uri = f"{envs[env]['云端环境_v']}/rest/app/community/encryptV1CtrlFIIDS"
-    if dev_type == "mini":
+    if direct_dev_type == "mini":
         siid = 3
     else:
         siid = 2

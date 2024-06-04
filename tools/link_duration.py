@@ -106,14 +106,20 @@ def link_duration(args, log_path):
         dev_type = args.条件执行设备
         terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.APP密码, log_path)
         directDid = args.条件设备所在网关
+        if directDid.startswith("00012004"):
+            direct_dev_type = "gw"
+        elif directDid.startswith("00011002"):
+            direct_dev_type = "mini"
+        else:
+            direct_dev_type = "gw"
         for dev in range(0, int(dev_num)):
-            add_subDevices(args, log_path, dev_type, condition_homeId, terminal_info, directDid=directDid, dev=dev)
+            add_subDevices(args, log_path, dev_type, condition_homeId, terminal_info, directDid=directDid, dev=dev, direct_dev_type=direct_dev_type)
             get_log(log_path).info(f'       ----       第 {dev+1} 个条件执行设备添加完成')
         get_log(log_path).info(f'    ----    添加动作执行设备中，请耐心等待')
         dev_type = args.动作执行设备
         terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.APP密码, log_path)
         directDid = args.动作设备所在网关
-        add_subDevices(args, log_path, dev_type, action_homeId, terminal_info, directDid=directDid, dev=2)
+        add_subDevices(args, log_path, dev_type, action_homeId, terminal_info, directDid=directDid, dev=2, direct_dev_type=direct_dev_type)
         get_log(log_path).info(f'       ----       动作执行设备添加完成')
         time.sleep(2)
         if args.执行动作 == "手动配置":
@@ -134,8 +140,8 @@ def link_duration(args, log_path):
         get_log(log_path).info(f'Step 3：开始执行测试并进行监控...')
         nums = args.测试轮询次数
         interval = args.测试间隔时长
-        time_summary = {"someone": [], "noone": []}
         if args.条件执行设备 == "人体存在传感器":
+            time_summary = {"someone": [], "noone": []}
             for num in range(0, int(nums)):
                 action_ip = ips[2]
                 get_log(log_path).info(f'    ----    第{num+1}次触发有人状态')
@@ -186,13 +192,67 @@ def link_duration(args, log_path):
                     lower_bound = i * interval2
                     upper_bound = (i + 1) * interval2
                     get_log(log_path).info(f"      ----      {lower_bound}-{upper_bound}s: {percentage:.2f}% ({count} 次)")
-        elif args.条件执行设备 == "湿度传感器":
-            pass
+        elif args.条件执行设备 == "温湿度传感器":
+            time_summary = {"high_temperature": [], "low_temperature": []}
+            for num in range(0, int(nums)):
+                action_ip = ips[2]
+                get_log(log_path).info(f'    ----    第{num + 1}次触发温度高于26℃（27℃）')
+                usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
+                start_time = time.time()
+                usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
+                for dev_n in range(0, int(dev_num)):
+                    send_data = "01 04 02 08 40 0A 00 00 29 8C 0A"
+                    condition_ip = ips[dev_n]
+                    usr_tcp232_t2_tool(log_path, condition_ip, send_data=send_data)
+                recv_mes = usr_tcp232_t2_tool_recv(log_path, action_ip)
+                end_time = time.time()
+                spend_time = end_time - start_time
+                get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
+                time_summary['high_temperature'].append(spend_time)
+                time.sleep(10)
+                get_log(log_path).info(f'    ----    第{num + 1}次触发温度低于26℃（21℃）')
+                usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
+                start_time = time.time()
+                for dev_n in range(0, int(dev_num)):
+                    send_data = "01 04 02 08 40 0A 00 00 29 34 08"
+                    condition_ip = ips[dev_n]
+                    usr_tcp232_t2_tool(log_path, condition_ip, send_data=send_data)
+                recv_mes = usr_tcp232_t2_tool_recv(log_path, action_ip)
+                end_time = time.time()
+                spend_time = end_time - start_time
+                get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
+                time_summary['low_temperature'].append(spend_time)
+                if num != int(nums - 1):
+                    get_log(log_path).info(f' ---- {interval}S后进行下一轮测试')
+                    time.sleep(int(interval))
+            get_log(log_path).info(f'Step 4：测试结束，测试数据整理中...')
+            for k, v in time_summary.items():
+                time_data = v
+                interval2 = 0.5
+                max_time = max(time_data)
+                # 计算区间数
+                num_intervals = int(np.ceil(max_time / interval2))
+                interval_counts = [0] * num_intervals  # 初始化区间计数器
+                for t in time_data:  # 统计每个区间的数据个数
+                    interval_index = int(t // interval2)
+                    interval_counts[interval_index] += 1
+                total_count = len(time_data)
+                interval_percentages = [(count / total_count) * 100 for count in interval_counts]
+                # 打印每个区间的占比
+                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，用时统计如下：')
+                for i, (count, percentage) in enumerate(zip(interval_counts, interval_percentages)):
+                    lower_bound = i * interval2
+                    upper_bound = (i + 1) * interval2
+                    get_log(log_path).info(
+                        f"      ----      {lower_bound}-{upper_bound}s: {percentage:.2f}% ({count} 次)")
         else:
             get_log(log_path).error(f'    !!!!    暂不支持此条件执行设备，敬请期待')
             sys.exit()
         # 关闭数据库、mqtt链接
-        db_tool.dispose()
+        try:
+            db_tool.dispose()
+        except Exception as e:
+            get_log(log_path).debug(f'关闭数据库链接发生如下错误：{e}')
     else:
         get_log(log_path).error(f'    !!!!    暂不支持此场景的测试监控，敬请期待')
         sys.exit()
