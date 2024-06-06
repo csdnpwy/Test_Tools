@@ -160,7 +160,9 @@ def conf_builder(args, log_path):
                 query_res = db_tool.getAll(sql)
                 if query_res:
                     get_log(log_path).info(f'        ----        桩did={did}注册成功')
-                    time.sleep(2)
+                else:
+                    get_log(log_path).info(f'        !!!!        桩did={did}注册失败')
+                time.sleep(2)
             except Exception as e:
                 get_log(log_path).error(f"f'        ----        桩did={did}注册失败，报错{e}'")
                 time.sleep(2)

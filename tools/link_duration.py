@@ -147,7 +147,6 @@ def link_duration(args, log_path):
                 get_log(log_path).info(f'    ----    第{num+1}次触发有人状态')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 start_time = time.time()
-                usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 for dev_n in range(0, int(dev_num)):
                     send_data = "01 04 06 18 4A 0A 00 00 18 01"
                     condition_ip = ips[dev_n]
@@ -187,7 +186,8 @@ def link_duration(args, log_path):
                 total_count = len(time_data)
                 interval_percentages = [(count / total_count) * 100 for count in interval_counts]
                 # 打印每个区间的占比
-                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，用时统计如下：')
+                average = sum(time_data) / len(time_data)
+                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，平均用时{average}，区间占比如下：')
                 for i, (count, percentage) in enumerate(zip(interval_counts, interval_percentages)):
                     lower_bound = i * interval2
                     upper_bound = (i + 1) * interval2
@@ -199,7 +199,6 @@ def link_duration(args, log_path):
                 get_log(log_path).info(f'    ----    第{num + 1}次触发温度高于26℃（27℃）')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 start_time = time.time()
-                usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 for dev_n in range(0, int(dev_num)):
                     send_data = "01 04 02 08 40 0A 00 00 29 8C 0A"
                     condition_ip = ips[dev_n]
@@ -239,7 +238,8 @@ def link_duration(args, log_path):
                 total_count = len(time_data)
                 interval_percentages = [(count / total_count) * 100 for count in interval_counts]
                 # 打印每个区间的占比
-                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，用时统计如下：')
+                average = sum(time_data) / len(time_data)
+                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，平均用时{average}，区间占比如下：')
                 for i, (count, percentage) in enumerate(zip(interval_counts, interval_percentages)):
                     lower_bound = i * interval2
                     upper_bound = (i + 1) * interval2
