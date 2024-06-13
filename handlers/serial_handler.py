@@ -1,3 +1,5 @@
+import time
+
 import serial
 import threading
 
@@ -48,7 +50,7 @@ class SerialComm:
         :param data:
         """
         if self.ser and self.ser.is_open:
-            self.ser.write(data.encode())
+            self.ser.write(data)
             get_log(self.log_path).debug(f"Data sent: {data}")
         else:
             get_log(self.log_path).debug("Serial port is not open")
@@ -56,7 +58,7 @@ class SerialComm:
     def _receive_data(self):
         while self.running:
             if self.ser and self.ser.in_waiting > 0:
-                data = self.ser.readline().decode().strip()
+                data = self.ser.readline().hex()
                 if data:
                     self.handle_received_data(data)
 
@@ -66,4 +68,26 @@ class SerialComm:
         :param data:
         """
         """Override this method to handle received data"""
-        get_log(self.log_path).debug(f"Data received: {data}")
+        print(time.time())
+        get_log(self.log_path).info(f"Data received: {data}")
+
+
+if __name__ == '__main__':
+    log_path = "D:\\pwy_log\\Leelen-ATT\\test.txt"
+    open_data = "550001000a010406184A0A00001801D05C"
+    down_data = "550001000a010406184B0A00001800104D"
+    status_data = "5500030200D96C"
+    serial1 = SerialComm(log_path, 'COM7')
+    serial2 = SerialComm(log_path, 'COM3')
+    serial1.open()
+    serial2.open()
+    time.sleep(2)
+    for i in range(0, 6):
+        get_log(log_path).info(f"第{i+1}次触发有人状态")
+        serial1.send_data(bytes.fromhex(open_data))
+        time.sleep(10)
+        get_log(log_path).info(f"第{i + 1}次触发无人状态")
+        serial1.send_data(bytes.fromhex(down_data))
+        time.sleep(10)
+    serial1.close()
+    serial2.close()

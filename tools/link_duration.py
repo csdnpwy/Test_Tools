@@ -142,6 +142,8 @@ def link_duration(args, log_path):
         interval = args.测试间隔时长
         if args.条件执行设备 == "人体存在传感器":
             time_summary = {"someone": [], "noone": []}
+            someone_fail_num = 0
+            noone_fail_num = 0
             for num in range(0, int(nums)):
                 action_ip = ips[2]
                 get_log(log_path).info(f'    ----    第{num+1}次触发有人状态')
@@ -155,7 +157,10 @@ def link_duration(args, log_path):
                 end_time = time.time()
                 spend_time = end_time - start_time
                 get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
-                time_summary['someone'].append(spend_time)
+                if recv_mes is None:
+                    someone_fail_num += 1
+                else:
+                    time_summary['someone'].append(spend_time)
                 time.sleep(10)
                 get_log(log_path).info(f'    ----    第{num + 1}次触发无人状态')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
@@ -168,13 +173,18 @@ def link_duration(args, log_path):
                 end_time = time.time()
                 spend_time = end_time - start_time
                 get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
-                time_summary['noone'].append(spend_time)
+                if recv_mes is None:
+                    noone_fail_num += 1
+                else:
+                    time_summary['noone'].append(spend_time)
                 if num != int(nums-1):
                     get_log(log_path).info(f' ---- {interval}S后进行下一轮测试')
                     time.sleep(int(interval))
             get_log(log_path).info(f'Step 4：测试结束，测试数据整理中...')
             for k, v in time_summary.items():
                 time_data = v
+                fail_obj = f"{k}_fail_num"
+                fail_num = eval(fail_obj)
                 interval2 = 0.5
                 max_time = max(time_data)
                 # 计算区间数
@@ -187,13 +197,15 @@ def link_duration(args, log_path):
                 interval_percentages = [(count / total_count) * 100 for count in interval_counts]
                 # 打印每个区间的占比
                 average = sum(time_data) / len(time_data)
-                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，平均用时{average}，区间占比如下：')
+                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，失败{fail_num}次，成功轮次平均用时{average}，区间占比如下：')
                 for i, (count, percentage) in enumerate(zip(interval_counts, interval_percentages)):
                     lower_bound = i * interval2
                     upper_bound = (i + 1) * interval2
                     get_log(log_path).info(f"      ----      {lower_bound}-{upper_bound}s: {percentage:.2f}% ({count} 次)")
         elif args.条件执行设备 == "温湿度传感器":
             time_summary = {"high_temperature": [], "low_temperature": []}
+            high_temperature_fail_num = 0
+            low_temperature_fail_num = 0
             for num in range(0, int(nums)):
                 action_ip = ips[2]
                 get_log(log_path).info(f'    ----    第{num + 1}次触发温度高于26℃（27℃）')
@@ -207,7 +219,10 @@ def link_duration(args, log_path):
                 end_time = time.time()
                 spend_time = end_time - start_time
                 get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
-                time_summary['high_temperature'].append(spend_time)
+                if recv_mes is None:
+                    high_temperature_fail_num += 1
+                else:
+                    time_summary['high_temperature'].append(spend_time)
                 time.sleep(10)
                 get_log(log_path).info(f'    ----    第{num + 1}次触发温度低于26℃（21℃）')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
@@ -220,13 +235,18 @@ def link_duration(args, log_path):
                 end_time = time.time()
                 spend_time = end_time - start_time
                 get_log(log_path).info(f"    ----    接收到动作设备被控数据{recv_mes}，用时 {spend_time} S")
-                time_summary['low_temperature'].append(spend_time)
+                if recv_mes is None:
+                    low_temperature_fail_num += 1
+                else:
+                    time_summary['low_temperature'].append(spend_time)
                 if num != int(nums - 1):
                     get_log(log_path).info(f' ---- {interval}S后进行下一轮测试')
                     time.sleep(int(interval))
             get_log(log_path).info(f'Step 4：测试结束，测试数据整理中...')
             for k, v in time_summary.items():
                 time_data = v
+                fail_obj = f"{k}_fail_num"
+                fail_num = eval(fail_obj)
                 interval2 = 0.5
                 max_time = max(time_data)
                 # 计算区间数
@@ -239,7 +259,7 @@ def link_duration(args, log_path):
                 interval_percentages = [(count / total_count) * 100 for count in interval_counts]
                 # 打印每个区间的占比
                 average = sum(time_data) / len(time_data)
-                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，平均用时{average}，区间占比如下：')
+                get_log(log_path).info(f'    ----    {k}联动场景共计测试{int(nums)}次，失败{fail_num}次，成功轮次平均用时{average}，区间占比如下：')
                 for i, (count, percentage) in enumerate(zip(interval_counts, interval_percentages)):
                     lower_bound = i * interval2
                     upper_bound = (i + 1) * interval2
