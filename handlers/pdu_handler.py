@@ -46,8 +46,9 @@ def ctl_pdu(ip, port=17722, lock=1, ctl='open'):
     client.close()
 
 
-# if __name__ == '__main__':
-    # ctl_pdu('10.58.66.158', lock=2)
+if __name__ == '__main__':
+    # ctl_pdu('10.58.66.158', lock=2, ctl='close')
+    ctl_pdu('10.58.66.158', lock=2)
     # ip = "10.58.0.68"
     # port = 9999
     # open = "01 31 01 01 00 00 34"

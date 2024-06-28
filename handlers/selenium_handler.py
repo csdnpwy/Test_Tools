@@ -1,6 +1,7 @@
 import json
 import time
 
+from selenium.common import UnexpectedAlertPresentException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
@@ -32,7 +33,12 @@ class SeleniumWrapper:
         打开URL
         :param url:
         """
-        self.driver.get(url)
+        try:
+            self.driver.get(url)
+        except UnexpectedAlertPresentException:
+            # self.handle_alert()
+            self.driver.execute_script("window.stop();")  # 停止当前页面加载
+            self.driver.get(url)  # 重新打开 URL
 
     def find_element(self, by, value):
         """

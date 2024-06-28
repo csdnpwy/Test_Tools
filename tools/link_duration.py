@@ -161,7 +161,7 @@ def link_duration(args, log_path):
                     someone_fail_num += 1
                 else:
                     time_summary['someone'].append(spend_time)
-                time.sleep(10)
+                time.sleep(int(interval))
                 get_log(log_path).info(f'    ----    第{num + 1}次触发无人状态')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 start_time = time.time()
@@ -223,7 +223,7 @@ def link_duration(args, log_path):
                     high_temperature_fail_num += 1
                 else:
                     time_summary['high_temperature'].append(spend_time)
-                time.sleep(10)
+                time.sleep(int(interval))
                 get_log(log_path).info(f'    ----    第{num + 1}次触发温度低于26℃（21℃）')
                 usr_tcp232_t2_tool_clear_buff(log_path, action_ip)
                 start_time = time.time()

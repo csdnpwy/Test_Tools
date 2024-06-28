@@ -20,6 +20,7 @@ from tools.t2_colorTemperaTure import t2_colorTemperaTure
 from tools.t2_led import t2_led
 from tools.web_ota_tool import web_ota_tool
 from tools.web_reboot_tool import web_reboot_tool
+from tools.zigbee_analyzer import zigbee_payload_analyzer
 
 running = True
 
@@ -264,6 +265,15 @@ def main():
     env.add_argument('保留列名', type=str, widget='TextField', help='All：保留所有，多个用空格分开（eg：列名1 列名2 列名3）',
                      default=config_manager.get_value('合并Excel', '保留列名', fallback='All'))
 
+    zigbee_analyzer = subs.add_parser('正则过滤器')
+    time_stamp = zigbee_analyzer.add_argument_group(gooey_options={'columns': 1})
+    time_stamp.add_argument('文件', type=str, widget='FileChooser',
+                            default=config_manager.get_value('正则过滤器', '文件'))
+    time_stamp.add_argument('过滤正则', type=str, widget='TextField',
+                            default=config_manager.get_value('正则过滤器', '过滤正则', fallback=''))
+    path = zigbee_analyzer.add_argument_group('过滤文件存储路径')
+    path.add_argument('Path', type=str, widget='DirChooser', default=config_manager.get_value('正则过滤器', 'Path'))
+
     log_path = f"{log_dir}check_for_update.txt"
     if not check_for_update(log_path):
         args = parser.parse_args()
@@ -305,6 +315,9 @@ def main():
             log_path = f"{log_dir}链路时长监控_{day}.txt"
             config_check_for_update(log_path)
             link_duration(args, log_path)
+        elif args.tools == '正则过滤器':
+            log_path = f"{log_dir}正则过滤器_{day}.txt"
+            zigbee_payload_analyzer(args, log_path)
         else:
             pass
 

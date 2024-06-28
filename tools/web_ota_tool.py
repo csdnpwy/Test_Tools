@@ -11,6 +11,22 @@ from handlers.selenium_handler import SeleniumWrapper
 from selenium.webdriver.common.by import By
 
 
+def is_ping_successful(ping_res):
+    """
+    判断ping结果，兼容多个环境结果
+    :param ping_res:
+    :return:
+    """
+    if ping_res is None:
+        return False
+    if isinstance(ping_res, bool):
+        return ping_res
+    try:
+        ping_value = float(ping_res)
+        return ping_value >= 0
+    except ValueError:
+        return False
+
 def web_ota_tool(args, log_path):
     """
     门禁海外web上下电压测
@@ -21,14 +37,16 @@ def web_ota_tool(args, log_path):
     # 检测测试环境
     get_log(log_path).info(f'Step 1：检测测试环境...')
     ping_res = ping(f"{args.主机IP}")
-    if ping_res is not None:
+    get_log(log_path).debug(f'{args.主机IP}连通测试结果：{ping_res}')
+    if is_ping_successful(ping_res):
         get_log(log_path).info(f'    ----    被测主机ip={args.主机IP}连通性正常')
         time.sleep(2)
     else:
         get_log(log_path).error(f'    !!!!    被测主机ip={args.主机IP}无法连通,请检查设备!')
         raise CustomError("环境异常，停止压测！")
     ping_res = ping(f"{args.PDU_IP}")
-    if ping_res is not None:
+    get_log(log_path).debug(f'{args.PDU_IP}连通测试结果：{ping_res}')
+    if is_ping_successful(ping_res):
         get_log(log_path).info(f'    ----    PDU_ip={args.PDU_IP}连通性正常')
         time.sleep(2)
     else:
@@ -91,7 +109,8 @@ def web_ota_tool(args, log_path):
         time.sleep(2)
         for i in range(0, 3):
             ping_res = ping(f"{args.主机IP}")
-            if ping_res is not None:
+            get_log(log_path).debug(f'{args.主机IP}连通测试结果：{ping_res}')
+            if is_ping_successful(ping_res):
                 get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}还能ping通，无正常下电，重试发送下电操作!')
                 ctl_pdu(pdu_ip, lock=lock, ctl='close')
                 time.sleep(2)
@@ -108,7 +127,8 @@ def web_ota_tool(args, log_path):
         time.sleep(args.间隔时长)
         for i in range(0, 3):
             ping_res = ping(f"{args.主机IP}")
-            if ping_res is not None:
+            get_log(log_path).debug(f'{args.主机IP}连通测试结果：{ping_res}')
+            if is_ping_successful(ping_res):
                 get_log(log_path).info(f'        ----        被测主机ip={args.主机IP}已正常上电...')
                 time.sleep(2)
                 break
