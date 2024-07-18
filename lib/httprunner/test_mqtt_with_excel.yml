@@ -1,0 +1,15 @@
+config:
+  name: "MQTT Test with Excel"
+  variables: {}
+
+teststeps:
+- name: "Run MQTT Client with Excel"
+  request:
+    type: "run_script"
+    script: "run_mqtt_tests.py"
+  validate_script:
+    script: |
+      with open('test_results.txt', 'r') as f:
+          results = f.readlines()
+      for result in results:
+          assert 'Success' in result, result

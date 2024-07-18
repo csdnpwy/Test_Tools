@@ -174,7 +174,7 @@ def main():
                          default=config_manager.get_value('web-OTA中断电压测', '升级包路径'))
     package.add_argument('软件版本', type=str, widget='TextField', default=config_manager.get_value('web-OTA中断电压测', '软件版本'))
     other = web_ota.add_argument_group('其他信息', gooey_options={'columns': 2})
-    other.add_argument('下电区间', type=str, widget='TextField', help='点击升级后在此区间轮询下电',
+    other.add_argument('下电区间', type=str, widget='TextField', help='点击升级后在此区间轮询下电\n注：0-0为不做下电操作',
                        default=config_manager.get_value('web-OTA中断电压测', '下电区间', fallback='2-5'))
     other.add_argument('间隔时长', type=int, widget='TextField', help='上电后到操作登录的间隔时长（S）',
                        default=config_manager.get_value('web-OTA中断电压测', '间隔时长', fallback='60'))

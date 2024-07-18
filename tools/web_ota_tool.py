@@ -102,27 +102,30 @@ def web_ota_tool(args, log_path):
         else:
             get_log(log_path).error(f'        !!!!        触发升级失败，返回状态码{status}...')
             raise CustomError("测试异常！")
-        time_interval = int(time_min) + (num % (int(time_max) - int(time_min) + 1))
-        get_log(log_path).info(f'        ----        {time_interval}S后进行断电操作...')
-        time.sleep(time_interval)
-        ctl_pdu(pdu_ip, lock=lock, ctl='close')
-        time.sleep(2)
-        for i in range(0, 3):
-            ping_res = ping(f"{args.主机IP}")
-            get_log(log_path).debug(f'{args.主机IP}连通测试结果：{ping_res}')
-            if is_ping_successful(ping_res):
-                get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}还能ping通，无正常下电，重试发送下电操作!')
-                ctl_pdu(pdu_ip, lock=lock, ctl='close')
-                time.sleep(2)
-                if i == 2:
-                    get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}无正常下电，重试3次均异常，停止测试!')
-                    raise CustomError("测试异常！")
-            else:
-                get_log(log_path).info(f'        ----        被测主机ip={args.主机IP}已正常下电')
-                time.sleep(2)
-                break
-        get_log(log_path).info(f'        ----        进行上电操作...')
-        ctl_pdu(pdu_ip, lock=lock)
+        if int(time_min) == 0 and int(time_max) == 0:
+            pass
+        else:
+            time_interval = int(time_min) + (num % (int(time_max) - int(time_min) + 1))
+            get_log(log_path).info(f'        ----        {time_interval}S后进行断电操作...')
+            time.sleep(time_interval)
+            ctl_pdu(pdu_ip, lock=lock, ctl='close')
+            time.sleep(2)
+            for i in range(0, 3):
+                ping_res = ping(f"{args.主机IP}")
+                get_log(log_path).debug(f'{args.主机IP}连通测试结果：{ping_res}')
+                if is_ping_successful(ping_res):
+                    get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}还能ping通，无正常下电，重试发送下电操作!')
+                    ctl_pdu(pdu_ip, lock=lock, ctl='close')
+                    time.sleep(2)
+                    if i == 2:
+                        get_log(log_path).error(f'        !!!!        被测主机ip={args.主机IP}无正常下电，重试3次均异常，停止测试!')
+                        raise CustomError("测试异常！")
+                else:
+                    get_log(log_path).info(f'        ----        被测主机ip={args.主机IP}已正常下电')
+                    time.sleep(2)
+                    break
+            get_log(log_path).info(f'        ----        进行上电操作...')
+            ctl_pdu(pdu_ip, lock=lock)
         get_log(log_path).info(f'        ----        {args.间隔时长}后进行机器连通检测并进入下一轮测试...')
         time.sleep(args.间隔时长)
         for i in range(0, 3):

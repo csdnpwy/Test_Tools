@@ -52,6 +52,19 @@ def check_for_update(log_path):
                 confirmed = messagebox.askyesno("确认", message)
                 # 根据用户的选择执行操作
                 if confirmed:
+                    # 显示正在更新提示框
+                    updating_message = tk.Toplevel(root)
+                    updating_message.title("正在更新")
+                    updating_message.geometry("300x80")
+                    tk.Label(updating_message, text="正在更新，请稍等...", font=18).pack(pady=20)
+
+                    # 使窗口居中显示
+                    root.update_idletasks()
+                    x = (root.winfo_screenwidth() // 2) - (updating_message.winfo_reqwidth() // 2)
+                    y = (root.winfo_screenheight() // 2) - (updating_message.winfo_reqheight() // 2)
+                    updating_message.geometry(f"+{x}+{y}")
+                    updating_message.update()
+
                     down_url = conf_reder.get_value('info', 'down_url')
                     response = requests.get(down_url)
                     if response.status_code == 200:
@@ -65,6 +78,8 @@ def check_for_update(log_path):
                             shutil.rmtree(install_path)
                         with zipfile.ZipFile(update_file_path, 'r') as zip_ref:
                             zip_ref.extractall(install_path)
+                        # 关闭“正在更新”提示框
+                        updating_message.destroy()
                         messagebox.showinfo("确认", f"更新完毕，安装路径{install_path}\n请重新打开最新版本软件！")
                         # 关闭当前运行的程序
                         sys.exit()

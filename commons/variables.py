@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24062815
+version = 24071814
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -204,6 +204,7 @@ readme_access_ctl = "**************************** 使用说明 *****************
               "24062016：修订web重新加载url因未停止当前的加载导致失败的bug\n" \
               "24062416：修订每轮测试完关闭浏览器（暂时修复检测页面加载是否成功遗留bug）\n" \
               "24062509：修订不同win ping结果不同（False、None）导致的误判\n" \
+              "24071814：兼容不做断电的升级压测\n" \
               "\n" \
               "web-reboot：\n" \
               "1、登录门禁产品web端点击保存按钮软重启压测；\n" \
