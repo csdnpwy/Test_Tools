@@ -68,7 +68,7 @@ class MQTTClient:
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\gw_control.txt', 'w') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}')
-                get_log(self.log_path).debug(f"网关接收群组控制报文：{message.topic}: {playload}")
+                get_log(self.log_path).debug(f"网关接收开关控制报文：{message.topic}: {playload}")
             elif "lliot/fiids_report" in message.topic:
                 get_log(self.log_path).debug(f"子设备上报状态：{message.topic}: {playload}")
                 current_time = datetime.now()

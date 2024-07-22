@@ -16,6 +16,7 @@ from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.property_builder import property_builder
 from tools.link_duration import link_duration
+from tools.scene_builder_tool import scene_builder_tool
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
 from tools.t2_led import t2_led
 from tools.web_ota_tool import web_ota_tool
@@ -57,7 +58,7 @@ def main():
     env.add_argument('场景', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('测试链路时长获取', '场景', fallback='单控'))
     env.add_argument('联动条件did', type=str, widget='TextField', default='none', help='仅联动场景填写，其他场景默认即可')
-    env.add_argument('单控did', type=str, widget='TextField', default='All', help='仅单控场景填写，All默认对网关下挂所有设备进行单控')
+    env.add_argument('单控did', type=str, widget='TextField', default='All', help='仅单控场景填写，All默认对网关下挂所有逻辑设备进行单控')
     app = time_parser.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
                      default=config_manager.get_value('测试链路时长获取', '用户名', fallback='15606075512'))
@@ -154,6 +155,27 @@ def main():
                          default=config_manager.get_value('链路时长监控', '执行动作', fallback="开关"))
     linkage.add_argument('动作设备所在网关', type=str, widget='TextField',
                          default=config_manager.get_value('链路时长监控', '动作设备所在网关', fallback=''))
+
+    scene_builder = subs.add_parser('场景生成器')
+    env = scene_builder.add_argument_group('测试环境信息', gooey_options={'columns': 2})
+    scenes = ["iotpre", "iottest", "56", "58"]
+    env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
+                     default=config_manager.get_value('场景生成器', '测试环境', fallback='iotpre'))
+    envs = ["群组", "手动场景", "定时执行", "联动执行"]
+    env.add_argument('预生成场景', type=str, widget='Dropdown', choices=envs,
+                     default=config_manager.get_value('场景生成器', '预生成场景', fallback='群组'))
+    app = scene_builder.add_argument_group('测试APP信息', gooey_options={'columns': 2})
+    app.add_argument('用户名', type=str, widget='TextField',
+                     default=config_manager.get_value('场景生成器', '用户名', fallback='15606075512'))
+    app.add_argument('密码', type=str, widget='TextField',
+                     default=config_manager.get_value('场景生成器', '密码', fallback='test'))
+    gateway = scene_builder.add_argument_group('测试网关信息', gooey_options={'columns': 2})
+    gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('场景生成器', 'Did'))
+    other = scene_builder.add_argument_group('其他信息', gooey_options={'columns': 2})
+    other.add_argument('生成间隔时长', type=float, widget='TextField',
+                       default=config_manager.get_value('场景生成器', '生成间隔时长', fallback='3'), help='创建下一个场景间隔时长')
+    other.add_argument('生成总数', type=int, widget='TextField',
+                       default=config_manager.get_value('场景生成器', '生成总数', fallback='100'), help='注：为0时则删除所有场景')
 
     readme_parser = subs.add_parser('****海外门禁助手****')
     default_txt = readme_access_ctl
@@ -318,6 +340,9 @@ def main():
         elif args.tools == '正则过滤器':
             log_path = f"{log_dir}正则过滤器_{day}.txt"
             zigbee_payload_analyzer(args, log_path)
+        elif args.tools == '场景生成器':
+            log_path = f"{log_dir}场景生成器_{day}.txt"
+            scene_builder_tool(args, log_path)
         else:
             pass
 

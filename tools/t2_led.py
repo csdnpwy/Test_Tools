@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import json
 import time
@@ -88,7 +88,7 @@ def t2_led(args, log_path):
             if args.单控did != 'All':
                 sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.单控did}' and siid = '2'"
             else:
-                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and siid = '2'"
+                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
         else:
             return
         devices_did = db_tool.getAll(sql_devices)
@@ -106,18 +106,21 @@ def t2_led(args, log_path):
     get_log(log_path).info(f'测试环境初始化...')
     terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
     accessToken = json.loads(terminal_info)['params']['accessToken']
+    # 设置过期时间
+    token_expiry = datetime.now() + timedelta(hours=22)
     # 注册监听用户
     time.sleep(2)
     get_log(log_path).info(f'    ----    启用监听mqtt客户端')
     did = "12300001000000000666"
     username = "HA-CE-R31-001"
-    password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
-    mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username,
-                             password=password, client_id=did, tool="t2_led", args=args)
     sql_did = f"select device_secret from iot_device where did = '{did}'"
-    res = db_tool.getAll(sql_did)
-    if not res:
+    device_secret_res = db_tool.getAll(sql_did)
+    if not device_secret_res:
         try:
+            # 创建MQTT客户端
+            password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
+            mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username,
+                                     password=password, client_id=did, args=args)
             # 连接到MQTT代理
             mqtt_client.connect()
             # 订阅主题
@@ -143,13 +146,25 @@ def t2_led(args, log_path):
             mqtt_client.start_loop()
             # 停止消息循环
             mqtt_client.stop_loop()
+            # 断开连接
+            mqtt_client.disconnect()
+            device_secret_res = db_tool.getAll(sql_did)
+            if device_secret_res:
+                print(f'        ----        桩did={did}注册成功')
+                time.sleep(2)
+            else:
+                get_log(log_path).error(f"        ----        桩did={did}注册失败！")
+                sys.exit()
         except Exception as e:
             get_log(log_path).error(f'        !!!!        注册mqtt监听用户失败：{e}')
     else:
         get_log(log_path).info(f'        ----        mqtt监听用户已存在，无需注册...')
     time.sleep(2)
     get_log(log_path).info(f'        ----        订阅所有相关主题...')
-    # 连接到MQTT代理
+    # 一机一密连接到MQTT代理
+    mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=f"{username}:{did}",
+                             password=f"{device_secret_res[0]['device_secret']}", client_id=did, tool="t2_led",
+                             args=args)
     mqtt_client.connect()
     # 订阅所有设备功能反馈主题
     dev_list = []
@@ -221,6 +236,10 @@ def t2_led(args, log_path):
         }
         # 执行循环测试
         for num in range(0, nums):
+            if datetime.now() >= token_expiry:
+                terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
+                accessToken = json.loads(terminal_info)['params']['accessToken']
+                token_expiry = datetime.now() + timedelta(hours=20)  # 重置计时器
             report_list = []
             if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
                 os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
@@ -496,6 +515,10 @@ def t2_led(args, log_path):
         }
         # 执行循环测试
         for num in range(0, nums):
+            if datetime.now() >= token_expiry:
+                terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
+                accessToken = json.loads(terminal_info)['params']['accessToken']
+                token_expiry = datetime.now() + timedelta(hours=20)  # 重置计时器
             report_list = []
             if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
                 os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
@@ -571,11 +594,17 @@ def t2_led(args, log_path):
                 get_log(log_path).error(f'发生如下错误：{e}')
         get_log(log_path).info("*" * gap_num)
     elif args.场景 == '单控':
+        fail_nums = {"open": 0, "close": 0}
         get_log(log_path).info(f'开始执行测试...')
         nums = args.测试轮询次数
         url = f"{envs[evn]['云端环境_v']}/rest/app/community/encryptV1CtrlFIIDS"
         # 执行循环测试
         for num in range(0, nums):
+            # 检查是否需要重新获取token
+            if datetime.now() >= token_expiry:
+                terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
+                accessToken = json.loads(terminal_info)['params']['accessToken']
+                token_expiry = datetime.now() + timedelta(hours=20)  # 重置计时器
             for device in devices_did:
                 open_data = {
                     "seq": 999,
@@ -583,7 +612,7 @@ def t2_led(args, log_path):
                     "params": {
                         "did": rf"{device['did']}",
                         "directDid": f"{args.Did}",
-                        "siid": 2,
+                        "siid": device['siid'],
                         "fiids": [
                             {
                                 "value": {
@@ -600,7 +629,7 @@ def t2_led(args, log_path):
                 if os.path.exists(f'{os.path.dirname(log_path)}\\gw_control.txt'):
                     os.remove(f'{os.path.dirname(log_path)}\\gw_control.txt')
                 time.sleep(3)
-                get_log(log_path).info(f'第 {num + 1} 次单控设备 {device["did"]} 开...')
+                get_log(log_path).info(f'第 {num + 1} 次单控设备 {device["did"]}-{device["siid"]} 开...')
                 begin_time = datetime.now()
                 res = app_request(accessToken, url, open_data, log_path)
                 get_log(log_path).debug(f"{res}")
@@ -620,6 +649,7 @@ def t2_led(args, log_path):
                     unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
                     if unique_list_open:
                         get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题")
+                        fail_nums["open"] += 1
                     else:
                         get_log(log_path).debug(
                             f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n子设备上报开状态时间：{end_time}')
@@ -630,6 +660,7 @@ def t2_led(args, log_path):
                 except FileNotFoundError as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
                     get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到网关操作主题或测试设备上报报文')
+                    fail_nums["open"] += 1
                 except Exception as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
                 # 关操作
@@ -639,7 +670,7 @@ def t2_led(args, log_path):
                     "params": {
                         "did": rf"{device['did']}",
                         "directDid": f"{args.Did}",
-                        "siid": 2,
+                        "siid": device['siid'],
                         "fiids": [
                             {
                                 "value": {
@@ -656,7 +687,7 @@ def t2_led(args, log_path):
                 if os.path.exists(f'{os.path.dirname(log_path)}\\gw_control.txt'):
                     os.remove(f'{os.path.dirname(log_path)}\\gw_control.txt')
                 time.sleep(3)
-                get_log(log_path).info(f'第 {num + 1} 次单控设备 {device["did"]} 关...')
+                get_log(log_path).info(f'第 {num + 1} 次单控设备 {device["did"]}-{device["siid"]} 关...')
                 begin_time = datetime.now()
                 res = app_request(accessToken, url, down_data, log_path)
                 get_log(log_path).debug(f"{res}")
@@ -675,6 +706,7 @@ def t2_led(args, log_path):
                     unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
                     if unique_list_open:
                         get_log(log_path).info(f"超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的关状态上报主题")
+                        fail_nums["close"] += 1
                     else:
                         get_log(log_path).debug(
                             f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n子设备上报关状态时间：{end_time}')
@@ -685,9 +717,14 @@ def t2_led(args, log_path):
                 except FileNotFoundError as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
                     get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                    fail_nums["close"] += 1
                 except Exception as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
             get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'测试结束，测试数据整理中...')
+        test_nums = len(devices_did) * nums
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次开测试，共计 {test_nums} 次，失败 {fail_nums["open"]} 次')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次关测试，共计 {test_nums} 次，失败 {fail_nums["close"]} 次')
     # 关闭数据库
     db_tool.dispose(1)
     # 断开mqtt连接
