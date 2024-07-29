@@ -75,9 +75,12 @@ def t2_led(args, log_path):
         get_log(log_path).info(f'    ----    APP获取网关绑定住家及房间正常')
         time.sleep(2)
         # 获取网关下挂设备
-        if args.场景 == "分布式-群组":
-            sql_devices = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
-        elif args.场景 == "集中式-联动":
+        if args.最大控制数量 == 'All':
+            sql_devices_base = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
+        else:
+            limit = int(args.最大控制数量)
+            sql_devices_base = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}' limit {limit}"
+        if args.场景 == "联动场景":
             sql_devices = f"select did, logic_name from iot_dc_logic_device where mactch_category = '1' and did = '{args.联动条件did}' and siid = '2'"
             devices_condition = db_tool.getAll(sql_devices)
             if not devices_condition:
@@ -85,19 +88,19 @@ def t2_led(args, log_path):
                 sys.exit()
             sql_devices = f"select did, logic_name, siid, service_type, is_display from (select * from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}') as subset where not (did = '{args.联动条件did}' and siid = '2')"
         elif args.场景 == "单控":
-            if args.单控did != 'All':
-                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.单控did}' and siid = '2'"
+            if args.最大控制数量 != 'All':
+                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.最大控制数量}' and siid = '2'"
             else:
-                sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
+                sql_devices = sql_devices_base
         else:
-            return
+            sql_devices = sql_devices_base
         devices_did = db_tool.getAll(sql_devices)
         if not devices_did or len(devices_did) == 0:
             get_log(log_path).error(f'    !!!!    网关未下挂任何预测试设备')
             sys.exit()
         else:
             get_log(log_path).debug(f'{devices_did}')
-            get_log(log_path).info(f'    ----    共计下挂 {len(devices_did)} 个预测试设备（逻辑设备）')
+            get_log(log_path).info(f'    ----    预测试设备（逻辑设备） {len(devices_did)} 个')
     except Exception as e:
         get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保网关did填写正确")
         sys.exit()
@@ -176,7 +179,8 @@ def t2_led(args, log_path):
     topic = f"lliot/receiver/{args.Did}"
     mqtt_client.subscribe(topic)
     # 分布式-群组
-    if args.场景 == '分布式-群组':
+    if args.场景 == '群组':
+        fail_nums = {"open": 0, "close": 0}
         get_log(log_path).info(f'    ----    创建测试群组')
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/smartHome/classify/addOrModify"
         deviceList = []
@@ -200,7 +204,7 @@ def t2_led(args, log_path):
         if not res:
             get_log(log_path).error(f'        !!!!        群组创建失败')
             sys.exit()
-        time.sleep(30)
+        time.sleep(90)
         get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'开始执行测试...')
         classifyId = json.loads(res)['params']['classifyId']
@@ -264,7 +268,8 @@ def t2_led(args, log_path):
                     get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的开状态上报主题')
                 else:
                     get_log(log_path).info(
-                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--失败率{len(unique_list_open) / len(dev_list) * 100}%')
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--单次子设备控制失败率{len(unique_list_open) / len(dev_list) * 100}%')
+                    fail_nums["open"] += 1
                 get_log(log_path).debug(
                     f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n最后一台子设备上报开状态时间：{end_time}')
                 get_log(log_path).info(
@@ -274,8 +279,10 @@ def t2_led(args, log_path):
             except FileNotFoundError as e:
                 get_log(log_path).error(f'发生如下错误：{e}')
                 get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["open"] += 1
             except Exception as e:
                 get_log(log_path).error(f'发生如下错误：{e}')
+                fail_nums["open"] += 1
             # 关操作
             report_list = []
             if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
@@ -301,7 +308,8 @@ def t2_led(args, log_path):
                     get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的关状态上报主题')
                 else:
                     get_log(log_path).info(
-                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--失败率{len(unique_list_down) / len(dev_list) * 100}%')
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--单次子设备控制失败率{len(unique_list_down) / len(dev_list) * 100}%')
+                    fail_nums["close"] += 1
                 get_log(log_path).debug(
                     f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n最后一台子设备上报关状态时间：{end_time}')
                 get_log(log_path).info(
@@ -311,10 +319,15 @@ def t2_led(args, log_path):
             except FileNotFoundError as e:
                 get_log(log_path).error(f'发生如下错误：{e}')
                 get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["close"] += 1
             except Exception as e:
                 get_log(log_path).error(f'发生如下错误：{e}')
-        get_log(log_path).info("*" * gap_num)
-    elif args.场景 == '集中式-联动':
+                fail_nums["close"] += 1
+            get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'测试结束，测试数据整理中...')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成群组共进行 {nums} 次开测试，失败 {fail_nums["open"]} 次')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成群组共进行 {nums} 次关测试，失败 {fail_nums["close"]} 次')
+    elif args.场景 == '联动场景':
         get_log(log_path).info(f'    ----    创建联动场景')
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/linkage/addOrModify"
         ctrlList = []
@@ -395,7 +408,7 @@ def t2_led(args, log_path):
             sys.exit()
         else:
             get_log(log_path).error(f'        ----        创建开联动场景中，请耐心等待...')
-        time.sleep(30)
+        time.sleep(90)
         ctrlList = []
         conditionList = []
         ctrlId = 0
@@ -474,7 +487,7 @@ def t2_led(args, log_path):
             sys.exit()
         else:
             get_log(log_path).error(f'        ----        创建关联动场景中，请耐心等待...')
-        time.sleep(30)
+        time.sleep(90)
         get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'开始执行测试...')
         nums = args.测试轮询次数
@@ -543,7 +556,7 @@ def t2_led(args, log_path):
                     get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的开状态上报主题')
                 else:
                     get_log(log_path).info(
-                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--失败率{len(unique_list_open) / len(dev_list) * 100}%')
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--单次子设备控制失败率{len(unique_list_open) / len(dev_list) * 100}%')
                 get_log(log_path).debug(
                     f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n最后一台子设备上报开状态时间：{end_time}')
                 get_log(log_path).info(
@@ -580,7 +593,7 @@ def t2_led(args, log_path):
                     get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的关状态上报主题')
                 else:
                     get_log(log_path).info(
-                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--失败率{len(unique_list_down) / len(dev_list) * 100}%')
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--单次子设备控制失败率{len(unique_list_down) / len(dev_list) * 100}%')
                 get_log(log_path).debug(
                     f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n最后一台子设备上报关状态时间：{end_time}')
                 get_log(log_path).info(
@@ -663,6 +676,7 @@ def t2_led(args, log_path):
                     fail_nums["open"] += 1
                 except Exception as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
+                    fail_nums["open"] += 1
                 # 关操作
                 down_data = {
                     "seq": 999,
@@ -720,11 +734,228 @@ def t2_led(args, log_path):
                     fail_nums["close"] += 1
                 except Exception as e:
                     get_log(log_path).error(f'发生如下错误：{e}')
+                    fail_nums["close"] += 1
             get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'测试结束，测试数据整理中...')
         test_nums = len(devices_did) * nums
         get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次开测试，共计 {test_nums} 次，失败 {fail_nums["open"]} 次')
         get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次关测试，共计 {test_nums} 次，失败 {fail_nums["close"]} 次')
+    elif args.场景 == '手动场景':
+        get_log(log_path).info(f'    ----    创建手动场景')
+        url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/scene/addOrModify"
+        ctrlList = []
+        ctrlId = 0
+        sort = 1
+        for device in devices_did:
+            devices = {
+                "extInfo": "{\"type\":1,\"value\":\"开关控制:开启\"}",
+                "ctrlType": 0,
+                "directDid": f"{args.Did}",
+                "defaultName": f"{device['logic_name']}",
+                "siid": f"{device['siid']}",
+                "roomName": f"{room}",
+                "ctrlId": ctrlId,
+                "roomId": f"{roomID}",
+                "isUpdate": 1,
+                "did": f"{device['did']}",
+                "fiids": [
+                    {
+                        "value": {
+                            "onOff": 1
+                        },
+                        "fiid": 49408
+                    }
+                ],
+                "sort": sort,
+                "name": f"{device['logic_name']}"
+            }
+            ctrlList.append(devices)
+            ctrlId += 1
+            sort += 1
+        open_data = {
+            "seq": 666,
+            "version": "v0.1",
+            "params": {
+                "uniqueIdentify": "1",
+                "ctrlList": ctrlList,
+                "subGroupId": f"{roomID}",
+                "sceneName": f"开手动场景",
+                "groupId": rf"{homeId}",
+                "baseIconId": "46",
+                "icon": f"https://{envs[evn]['云端MQTT_Host_v']}/authpic?p=http://{envs[evn]['云端MQTT_Host_v']}:9001/home/data/nas/3/record/111/202403/13/20240313095149640524.png"
+            }
+        }
+        res = app_request(accessToken, url, open_data, log_path)
+        if not res:
+            get_log(log_path).error(f'        !!!!        开手动场景创建失败')
+            sys.exit()
+        else:
+            get_log(log_path).error(f'        ----        创建开手动场景中，请耐心等待...')
+        time.sleep(90)
+        open_sceneId = json.loads(res)['params'][0]['sceneId']
+        ctrlList = []
+        ctrlId = 0
+        sort = 1
+        for device in devices_did:
+            devices = {
+                "extInfo": "{\"type\":1,\"value\":\"开关控制:关闭\"}",
+                "ctrlType": 0,
+                "directDid": f"{args.Did}",
+                "defaultName": f"{device['logic_name']}",
+                "siid": f"{device['siid']}",
+                "roomName": f"{room}",
+                "ctrlId": ctrlId,
+                "roomId": f"{roomID}",
+                "isUpdate": 1,
+                "did": f"{device['did']}",
+                "fiids": [
+                    {
+                        "value": {
+                            "onOff": 0
+                        },
+                        "fiid": 49408
+                    }
+                ],
+                "sort": sort,
+                "name": f"{device['logic_name']}"
+            }
+            ctrlList.append(devices)
+            ctrlId += 1
+            sort += 1
+        close_data = {
+            "seq": 666,
+            "version": "v0.1",
+            "params": {
+                "uniqueIdentify": "1",
+                "ctrlList": ctrlList,
+                "subGroupId": f"{roomID}",
+                "sceneName": f"关手动场景",
+                "groupId": rf"{homeId}",
+                "baseIconId": "46",
+                "icon": f"https://{envs[evn]['云端MQTT_Host_v']}/authpic?p=http://{envs[evn]['云端MQTT_Host_v']}:9001/home/data/nas/3/record/111/202403/13/20240313095149640524.png"
+            }
+        }
+        res = app_request(accessToken, url, close_data, log_path)
+        if not res:
+            get_log(log_path).error(f'        !!!!        关手动场景创建失败')
+            sys.exit()
+        else:
+            get_log(log_path).error(f'        ----        创建关手动场景中，请耐心等待...')
+        time.sleep(90)
+        close_sceneId = json.loads(res)['params'][0]['sceneId']
+        get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'开始执行测试...')
+        nums = args.测试轮询次数
+        fail_nums = {"open": 0, "close": 0}
+        url = f"{envs[evn]['云端环境_v']}/rest/app/community/scene/execute"
+        open_scene = {
+            "seq": 999,
+            "version": "v0.1",
+            "params": {
+                "groupId": rf"{app['homeID']}",
+                "sceneId": f"{open_sceneId}"
+            }
+        }
+        down_scene = {
+            "seq": 999,
+            "version": "v0.1",
+            "params": {
+                "groupId": rf"{app['homeID']}",
+                "sceneId": f"{close_sceneId}"
+            }
+        }
+        # 执行循环测试
+        for num in range(0, nums):
+            if datetime.now() >= token_expiry:
+                terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.用户名, args.密码, log_path)
+                accessToken = json.loads(terminal_info)['params']['accessToken']
+                token_expiry = datetime.now() + timedelta(hours=20)  # 重置计时器
+            report_list = []
+            if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
+                os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
+            get_log(log_path).info(f'第 {num + 1} 次控制开手动场景...')
+            begin_time = datetime.now()
+            res = app_request(accessToken, url, open_scene, log_path)
+            get_log(log_path).debug(f"{res}")
+            time.sleep(args.测试间隔时长)
+            try:
+                with open(f'{os.path.dirname(log_path)}\\gw_control.txt', 'r', encoding='utf-8') as f:
+                    content = f.read().split('--')[0].strip()
+                    control_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
+                    last_line = lines[-1]
+                    content = last_line.split('--')[0].strip()
+                    end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
+                if not unique_list_open:
+                    get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的开状态上报主题')
+                else:
+                    get_log(log_path).info(
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--单次子设备控制失败率{len(unique_list_open) / len(dev_list) * 100}%')
+                    fail_nums["open"] += 1
+                get_log(log_path).debug(
+                    f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n最后一台子设备上报开状态时间：{end_time}')
+                get_log(log_path).info(
+                    f'app下发 --> 网关接收到开操作主题用时：{"{:.3f}".format((control_time - begin_time).total_seconds())} S')
+                get_log(log_path).info(
+                    f'网关接收到开操作主题 --> 最后一台子设备上报开状态用时：{"{:.3f}".format((end_time - control_time).total_seconds())} S')
+            except FileNotFoundError as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["open"] += 1
+            except Exception as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                fail_nums["open"] += 1
+            # 关操作
+            report_list = []
+            if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
+                os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
+            get_log(log_path).info(f'第 {num + 1} 次控制关手动场景...')
+            begin_time = datetime.now()
+            res = app_request(accessToken, url, down_scene, log_path)
+            get_log(log_path).debug(f"{res}")
+            time.sleep(args.测试间隔时长)
+            try:
+                with open(f'{os.path.dirname(log_path)}\\gw_control.txt', 'r', encoding='utf-8') as f:
+                    content = f.read().split('--')[0].strip()
+                    control_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
+                    last_line = lines[-1]
+                    content = last_line.split('--')[0].strip()
+                    end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                unique_list_down = [d for d in dev_list if d not in list(set(report_list))]
+                if not unique_list_down:
+                    get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的关状态上报主题')
+                else:
+                    get_log(log_path).info(
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--单次子设备控制失败率{len(unique_list_down) / len(dev_list) * 100}%')
+                    fail_nums["close"] += 1
+                get_log(log_path).debug(
+                    f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n最后一台子设备上报关状态时间：{end_time}')
+                get_log(log_path).info(
+                    f'app下发 --> 网关接收到关操作主题用时：{"{:.3f}".format((control_time - begin_time).total_seconds())} S')
+                get_log(log_path).info(
+                    f'网关接收到关操作主题 --> 最后一台子设备上报关状态用时：{"{:.3f}".format((end_time - control_time).total_seconds())} S')
+            except FileNotFoundError as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["close"] += 1
+            except Exception as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                fail_nums["close"] += 1
+            get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'测试结束，测试数据整理中...')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成手动场景共进行 {nums} 次开测试，失败 {fail_nums["open"]} 次')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成手动场景共进行 {nums} 次关测试，失败 {fail_nums["close"]} 次')
+    else:
+        get_log(log_path).error(f'    !!!!    暂不支持此场景测试监控，敬请期待')
+        sys.exit()
     # 关闭数据库
     db_tool.dispose(1)
     # 断开mqtt连接

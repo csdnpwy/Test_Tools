@@ -52,18 +52,18 @@ class MQTTClient:
 
     def on_message_t2_led(self, client, userdata, message):
         playload = str(message.payload).replace(" ", "")
-        if self.args.场景 == '分布式-群组':
-            if message.topic == f'lliot/receiver/{self.args.Did}' and '"fiid":33106,' in playload:
+        if self.args.场景 == '群组' or self.args.场景 == '手动场景':
+            if message.topic == f'lliot/receiver/{self.args.Did}' and ('"fiid":33106,' in playload or '"fiid":33031,' in playload):
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\gw_control.txt', 'w') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}')
-                get_log(self.log_path).debug(f"网关接收群组控制报文：{message.topic}: {playload}")
+                get_log(self.log_path).debug(f"网关接收群组/手动场景控制报文：{message.topic}: {playload}")
             elif "lliot/fiids_report" in message.topic:
                 get_log(self.log_path).debug(f"子设备上报状态：{message.topic}: {playload}")
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\fiids_report.txt', 'a') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}\n')
-        elif self.args.场景 == '集中式-联动' or self.args.场景 == '单控':
+        elif self.args.场景 == '联动场景' or self.args.场景 == '单控':
             if message.topic == f'lliot/receiver/{self.args.Did}' and '"fiid":49408,' in playload:
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\gw_control.txt', 'w') as file:

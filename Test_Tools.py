@@ -49,16 +49,16 @@ def main():
     default_txt = readme_test
     readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
                                default=f"{default_txt}")
-    time_parser = subs.add_parser('测试链路时长获取')
+    time_parser = subs.add_parser('真实设备链路监控')
     env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
     scenes = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
                      default=config_manager.get_value('测试链路时长获取', '测试环境', fallback='iotpre'))
-    envs = ["单控", "集中式-联动", "分布式-群组"]
+    envs = ["单控", "群组", "联动场景", "定时场景", "手动场景"]
     env.add_argument('场景', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('测试链路时长获取', '场景', fallback='单控'))
     env.add_argument('联动条件did', type=str, widget='TextField', default='none', help='仅联动场景填写，其他场景默认即可')
-    env.add_argument('单控did', type=str, widget='TextField', default='All', help='仅单控场景填写，All默认对网关下挂所有逻辑设备进行单控')
+    env.add_argument('最大控制数量', type=str, widget='TextField', default='All', help='All：网关下挂所有逻辑设备\n100：100个逻辑设备（自定义）\ndid：具体设备did')
     app = time_parser.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
                      default=config_manager.get_value('测试链路时长获取', '用户名', fallback='15606075512'))
@@ -71,6 +71,46 @@ def main():
                        default=config_manager.get_value('测试链路时长获取', '测试间隔时长', fallback='30'), help='每轮测试超时时长')
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('测试链路时长获取', '测试轮询次数', fallback='100'))
+
+    time_parser = subs.add_parser('虚拟设备链路监控')
+    env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
+    scenes = ["iotpre", "iottest", "56", "58"]
+    env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
+                     default=config_manager.get_value('链路时长监控', '测试环境', fallback='iotpre'))
+    vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
+             "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
+             "虚拟设备5（216|218|219）"]
+    env.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
+                     default=config_manager.get_value('链路时长监控', '虚拟设备'))
+    env.add_argument('APP用户名', type=str, widget='TextField',
+                     default=config_manager.get_value('链路时长监控', 'APP用户名', fallback='15606075512'))
+    env.add_argument('APP密码', type=str, widget='TextField',
+                     default=config_manager.get_value('链路时长监控', 'APP密码', fallback='test'))
+    other = time_parser.add_argument_group('测试关键信息', gooey_options={'columns': 3})
+    scenes = ["联动场景", "定时场景", "手动场景", "群组"]
+    other.add_argument('测试场景', type=str, widget='Dropdown', choices=scenes,
+                       default=config_manager.get_value('链路时长监控', '测试场景', fallback='联动场景'))
+    other.add_argument('测试间隔时长', type=float, widget='TextField',
+                       default=config_manager.get_value('链路时长监控', '测试间隔时长', fallback='30'), help='每轮测试超时时长')
+    other.add_argument('测试轮询次数', type=int, widget='TextField',
+                       default=config_manager.get_value('链路时长监控', '测试轮询次数', fallback='100'))
+    linkage = time_parser.add_argument_group('联动场景', gooey_options={'columns': 3})
+    conditions = ["人体存在传感器", "温湿度传感器", "人体传感器H02"]
+    linkage.add_argument('条件执行设备', type=str, widget='Dropdown', choices=conditions,
+                         default=config_manager.get_value('链路时长监控', '条件执行设备', fallback='人体存在传感器'))
+    num = [1, 2]
+    linkage.add_argument('条件设备个数', type=int, widget='Dropdown', choices=num,
+                         default=config_manager.get_value('链路时长监控', '条件设备个数', fallback=1))
+    linkage.add_argument('条件设备所在网关', type=str, widget='TextField',
+                         default=config_manager.get_value('链路时长监控', '条件设备所在网关', fallback=''))
+    actions = ["T2筒射灯", "所有下挂设备"]
+    linkage.add_argument('动作执行设备', type=str, widget='Dropdown', choices=actions,
+                         default=config_manager.get_value('链路时长监控', '动作执行设备', fallback='T2筒射灯'))
+    action = ["开关", "手动配置"]
+    linkage.add_argument('执行动作', type=str, widget='Dropdown', choices=action,
+                         default=config_manager.get_value('链路时长监控', '执行动作', fallback="开关"))
+    linkage.add_argument('动作设备所在网关', type=str, widget='TextField',
+                         default=config_manager.get_value('链路时长监控', '动作设备所在网关', fallback=''))
 
     colorTemperaTure_parser = subs.add_parser('T2筒射灯色温压测', help='T2筒射灯色温压测')
     env = colorTemperaTure_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
@@ -115,46 +155,6 @@ def main():
                        default=config_manager.get_value('解绑绑定压测', '测试间隔时长', fallback='1'))
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('解绑绑定压测', '测试轮询次数', fallback='1'))
-
-    time_parser = subs.add_parser('链路时长监控')
-    env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
-    scenes = ["iotpre", "iottest", "56", "58"]
-    env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
-                     default=config_manager.get_value('链路时长监控', '测试环境', fallback='iotpre'))
-    vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
-             "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
-             "虚拟设备5（216|218|219）"]
-    env.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
-                     default=config_manager.get_value('链路时长监控', '虚拟设备'))
-    env.add_argument('APP用户名', type=str, widget='TextField',
-                     default=config_manager.get_value('链路时长监控', 'APP用户名', fallback='15606075512'))
-    env.add_argument('APP密码', type=str, widget='TextField',
-                     default=config_manager.get_value('链路时长监控', 'APP密码', fallback='test'))
-    other = time_parser.add_argument_group('测试关键信息', gooey_options={'columns': 3})
-    scenes = ["联动场景", "定时场景", "手动场景", "群组"]
-    other.add_argument('测试场景', type=str, widget='Dropdown', choices=scenes,
-                       default=config_manager.get_value('链路时长监控', '测试场景', fallback='联动场景'))
-    other.add_argument('测试间隔时长', type=float, widget='TextField',
-                       default=config_manager.get_value('链路时长监控', '测试间隔时长', fallback='30'), help='每轮测试超时时长')
-    other.add_argument('测试轮询次数', type=int, widget='TextField',
-                       default=config_manager.get_value('链路时长监控', '测试轮询次数', fallback='100'))
-    linkage = time_parser.add_argument_group('联动场景', gooey_options={'columns': 3})
-    conditions = ["人体存在传感器", "温湿度传感器"]
-    linkage.add_argument('条件执行设备', type=str, widget='Dropdown', choices=conditions,
-                         default=config_manager.get_value('链路时长监控', '条件执行设备', fallback='人体存在传感器'))
-    num = [1, 2]
-    linkage.add_argument('条件设备个数', type=int, widget='Dropdown', choices=num,
-                         default=config_manager.get_value('链路时长监控', '条件设备个数', fallback=1))
-    linkage.add_argument('条件设备所在网关', type=str, widget='TextField',
-                         default=config_manager.get_value('链路时长监控', '条件设备所在网关', fallback=''))
-    actions = ["T2筒射灯", "所有下挂设备"]
-    linkage.add_argument('动作执行设备', type=str, widget='Dropdown', choices=actions,
-                         default=config_manager.get_value('链路时长监控', '动作执行设备', fallback='T2筒射灯'))
-    action = ["开关", "手动配置"]
-    linkage.add_argument('执行动作', type=str, widget='Dropdown', choices=action,
-                         default=config_manager.get_value('链路时长监控', '执行动作', fallback="开关"))
-    linkage.add_argument('动作设备所在网关', type=str, widget='TextField',
-                         default=config_manager.get_value('链路时长监控', '动作设备所在网关', fallback=''))
 
     scene_builder = subs.add_parser('场景生成器')
     env = scene_builder.add_argument_group('测试环境信息', gooey_options={'columns': 2})
@@ -303,8 +303,8 @@ def main():
         config_manager.set_value(input_info)
         config_manager.save_config()
         day = datetime.now().strftime('%Y-%m-%d')
-        if args.tools == '测试链路时长获取':
-            log_path = f"{log_dir}t2_led_{day}.txt"
+        if args.tools == '真实设备链路监控':
+            log_path = f"{log_dir}真实设备链路监控_{day}.txt"
             t2_led(args, log_path)
         elif args.tools == 'T2筒射灯色温压测':
             log_path = f"{log_dir}t2_colorTemperaTure_{day}.txt"
@@ -333,8 +333,8 @@ def main():
             log_path = f"{log_dir}web_reboot_{day}.txt"
             driver_check_for_update(log_path)
             web_reboot_tool(args, log_path)
-        elif args.tools == '链路时长监控':
-            log_path = f"{log_dir}链路时长监控_{day}.txt"
+        elif args.tools == '虚拟设备链路监控':
+            log_path = f"{log_dir}虚拟设备链路监控_{day}.txt"
             config_check_for_update(log_path)
             link_duration(args, log_path)
         elif args.tools == '正则过滤器':
