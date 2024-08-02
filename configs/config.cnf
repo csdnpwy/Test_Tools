@@ -100,6 +100,7 @@ P10-4路6按键开关面板 = 0001200d
 人体存在传感器 = 000b2012
 温湿度传感器 = 000b2012
 人体传感器H02 = 000b2012
+嵌入式红外幕帘传感器 = 000b2012
 
 [T2筒射灯]
 ;设备描述文档ID
@@ -243,7 +244,7 @@ manufacture_version = MAIN:1.1
 ;软件产品型号
 product_label = HAZB-SD-R25-002
 ;软件型号
-model_identifier = HAZB-SD-R25-002
+model_identifier = MIR-IR100-IT
 ;设备id
 device_id = 0x0107
 ;软件项目号
@@ -255,3 +256,30 @@ application_version = 17
 ;端点号(Endpoint Number)
 ep_num = 0x01
 
+[嵌入式红外幕帘传感器]
+;设备描述文档ID
+profileid = 170
+;设备类型
+device_type = 0x284
+;软件序号
+soft_no = 0
+;工厂名称
+manufacture_name = MultIR
+;工厂编码
+manufacture_code = 0x5555
+;软件版本
+manufacture_version = 
+;软件产品型号
+product_label = HAZB-SD-R55-001
+;软件型号
+model_identifier = MIR-IR400-D01
+;设备id
+device_id = 0x0402
+;软件项目号
+soft_pro_no = HA-2020
+;第三方版本
+third_version = v0.1.2
+;app版本
+application_version = 2
+;端点号(Endpoint Number)
+ep_num = 0x01

@@ -178,6 +178,8 @@ def t2_led(args, log_path):
     # 订阅网关接收主题
     topic = f"lliot/receiver/{args.Did}"
     mqtt_client.subscribe(topic)
+    # 关闭数据库
+    db_tool.dispose()
     # 分布式-群组
     if args.场景 == '群组':
         fail_nums = {"open": 0, "close": 0}
@@ -956,7 +958,5 @@ def t2_led(args, log_path):
     else:
         get_log(log_path).error(f'    !!!!    暂不支持此场景测试监控，敬请期待')
         sys.exit()
-    # 关闭数据库
-    db_tool.dispose(1)
     # 断开mqtt连接
     mqtt_client.disconnect()
