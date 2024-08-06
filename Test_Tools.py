@@ -8,7 +8,7 @@ from datetime import datetime
 from gooey import Gooey, GooeyParser
 from commons.variables import *
 from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update, \
-    config_check_for_update
+    config_check_for_update, audio_check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
 from tools.data_pressure import data_pressure
@@ -56,7 +56,7 @@ def main():
     scenes = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
                      default=config_manager.get_value('真实设备链路监控', '测试环境', fallback='iotpre'))
-    envs = ["单控", "群组", "联动场景", "定时场景", "手动场景"]
+    envs = ["单控", "群组", "联动场景", "定时场景", "手动场景", "小立管家唤醒"]
     env.add_argument('场景', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('真实设备链路监控', '场景', fallback='单控'))
     env.add_argument('联动条件did', type=str, widget='TextField', default='none', help='仅联动场景填写，其他场景默认即可')
@@ -330,6 +330,7 @@ def main():
         day = datetime.now().strftime('%Y-%m-%d')
         if args.tools == '真实设备链路监控':
             log_path = f"{log_dir}真实设备链路监控_{day}.txt"
+            audio_check_for_update(log_path)
             t2_led(args, log_path)
         elif args.tools == 'T2筒射灯色温压测':
             log_path = f"{log_dir}t2_colorTemperaTure_{day}.txt"

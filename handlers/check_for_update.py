@@ -206,6 +206,45 @@ def driver_check_for_update(log_path):
     else:
         get_log(log_path).debug(f'已是最新浏览器驱动文件！')
 
+def audio_check_for_update(log_path):
+    """
+    真实设备链路监控之小立管家场景 - 音频文件检查更新
+    :param log_path: 日志存储路径
+    """
+    conf_reder = ConfigReader(f"{log_dir}version.ini")
+    audio_info = {
+        "open_light_audio": os.path.join(project_root, "audio", "小立管家", "小立管家开灯.wav"),
+        "close_light_audio": os.path.join(project_root, "audio", "小立管家", "小立管家关灯.wav")
+    }
+    audio_md5 = {
+        "open_light_audio_md5": conf_reder.get_value('info', 'open_light_audioMD5').lower(),
+        "close_light_audio_md5": conf_reder.get_value('info', 'close_light_audioMD5').lower()
+    }
+    local_md5 = "test"
+    for (audio_name, audio_path), (audio_name_md5, value) in zip(audio_info.items(), audio_md5.items()):
+        # 如果目录不存在则创建
+        audio_dir = os.path.dirname(audio_path)
+        if not os.path.exists(audio_dir):
+            os.makedirs(audio_dir)
+            get_log(log_path).debug(f'创建目录: {audio_dir}')
+        # 如果文件不存在则创建一个空文件
+        elif not os.path.exists(audio_path):
+            pass
+        else:
+            local_md5 = calculate_md5(audio_path).lower()
+        if local_md5 != value:
+            down_url = conf_reder.get_value('info', f"{audio_name}_url")
+            response = requests.get(down_url)
+            if response.status_code == 200:
+                with open(audio_path, 'wb') as temp_file:
+                    temp_file.write(response.content)
+                    get_log(log_path).debug(f'音频文件文件更新成功！\nremote_md5:{value}\nlocal_md5:{local_md5}')
+            else:
+                get_log(log_path).info(f'音频文件更新失败！请求内容{response.status_code}-{response.text}')
+                sys.exit()
+        else:
+            get_log(log_path).debug(f'已是最新音频文件！')
+
 
 # if __name__ == '__main__':
 #     log_path = f"{log_dir}check_for_update.txt"

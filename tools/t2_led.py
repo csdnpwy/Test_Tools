@@ -7,6 +7,8 @@ import time
 
 from commons.variables import *
 from handlers.app_handler import get_terminal_info, app_request
+from handlers.audio_handler import AudioPlayer
+from handlers.global_handler import get_stake_did
 from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
@@ -56,7 +58,7 @@ def t2_led(args, log_path):
                 get_log(log_path).error(f'    !!!!    APP密码错误')
                 sys.exit()
         # 获取网关绑定的住家和房间
-        sql_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{args.Did}' and siid = '2')"
+        sql_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{args.Did}' and logic_name like '网关服务%')"
         group_id = db_tool.getAll(sql_group_id)
         sql = f"select id, parent_id, name  from newiot_group ng  where id = '{group_id[0]['group_id']}'"
         res = db_tool.getAll(sql)
@@ -99,7 +101,17 @@ def t2_led(args, log_path):
             get_log(log_path).error(f'    !!!!    网关未下挂任何预测试设备')
             sys.exit()
         else:
-            get_log(log_path).debug(f'{devices_did}')
+            # 小立管家唤醒场景排除非同房间设备
+            other_room_dev = []
+            for dev in devices_did:
+                sql_subdev_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{dev['did']}' and siid = '{dev['siid']}')"
+                subdev_group_id = db_tool.getAll(sql_subdev_group_id)
+                if subdev_group_id[0]['group_id'] != roomID:
+                    other_room_dev.append(dev)
+            the_same_room_dev = [item for item in devices_did if item not in other_room_dev]
+            get_log(log_path).debug(f'与被测网关同房间设备{the_same_room_dev}\n与被测网关不同房间设备{other_room_dev}')
+            if args.场景 == "小立管家唤醒":
+                devices_did = the_same_room_dev
             get_log(log_path).info(f'    ----    预测试设备（逻辑设备） {len(devices_did)} 个')
     except Exception as e:
         get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保网关did填写正确")
@@ -114,7 +126,7 @@ def t2_led(args, log_path):
     # 注册监听用户
     time.sleep(2)
     get_log(log_path).info(f'    ----    启用监听mqtt客户端')
-    did = "12300001000000000666"
+    did = get_stake_did()
     username = "HA-CE-R31-001"
     sql_did = f"select device_secret from iot_device where did = '{did}'"
     device_secret_res = db_tool.getAll(sql_did)
@@ -178,6 +190,7 @@ def t2_led(args, log_path):
     # 订阅网关接收主题
     topic = f"lliot/receiver/{args.Did}"
     mqtt_client.subscribe(topic)
+    time.sleep(10)
     # 关闭数据库
     db_tool.dispose()
     # 分布式-群组
@@ -955,6 +968,99 @@ def t2_led(args, log_path):
         get_log(log_path).info(f'测试结束，测试数据整理中...')
         get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成手动场景共进行 {nums} 次开测试，失败 {fail_nums["open"]} 次')
         get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备组成手动场景共进行 {nums} 次关测试，失败 {fail_nums["close"]} 次')
+    elif args.场景 == '小立管家唤醒':
+        get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'开始执行测试...')
+        nums = args.测试轮询次数
+        fail_nums = {"open": 0, "close": 0}
+        open_audio_file = os.path.join(project_root, "audio", "小立管家", "小立管家开灯.wav")
+        close_audio_file = os.path.join(project_root, "audio", "小立管家", "小立管家关灯.wav")
+        # 执行循环测试
+        for num in range(0, nums):
+            # 开灯操作
+            report_list = []
+            if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
+                os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
+            get_log(log_path).info(f'第 {num + 1} 次通过小立管家控制开灯...')
+            player = AudioPlayer(f"{open_audio_file}")
+            player.play()
+            begin_time = datetime.now()
+            time.sleep(args.测试间隔时长)
+            try:
+                with open(f'{os.path.dirname(log_path)}\\gw_control.txt', 'r', encoding='utf-8') as f:
+                    content = f.read().split('--')[0].strip()
+                    control_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
+                    last_line = lines[-1]
+                    content = last_line.split('--')[0].strip()
+                    end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                unique_list_open = [d for d in dev_list if d not in list(set(report_list))]
+                if not unique_list_open:
+                    get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的开状态上报主题')
+                else:
+                    get_log(log_path).info(
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_open}测试设备的开状态上报主题--单次子设备控制失败率{len(unique_list_open) / len(dev_list) * 100}%')
+                    fail_nums["open"] += 1
+                get_log(log_path).debug(
+                    f'app接口下发开操作时间为：{begin_time}\n网关接收到开操作主题时间：{control_time}\n最后一台子设备上报开状态时间：{end_time}')
+                get_log(log_path).info(
+                    f'app下发 --> 网关接收到开操作主题用时：{"{:.3f}".format((control_time - begin_time).total_seconds())} S')
+                get_log(log_path).info(
+                    f'网关接收到开操作主题 --> 最后一台子设备上报开状态用时：{"{:.3f}".format((end_time - control_time).total_seconds())} S')
+            except FileNotFoundError as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["open"] += 1
+            except Exception as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                fail_nums["open"] += 1
+            # 关灯操作
+            report_list = []
+            if os.path.exists(f'{os.path.dirname(log_path)}\\fiids_report.txt'):
+                os.remove(f'{os.path.dirname(log_path)}\\fiids_report.txt')
+            get_log(log_path).info(f'第 {num + 1} 次通过小立管家控制关灯...')
+            player = AudioPlayer(f"{close_audio_file}")
+            player.play()
+            begin_time = datetime.now()
+            time.sleep(args.测试间隔时长)
+            try:
+                with open(f'{os.path.dirname(log_path)}\\gw_control.txt', 'r', encoding='utf-8') as f:
+                    content = f.read().split('--')[0].strip()
+                    control_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                with open(f'{os.path.dirname(log_path)}\\fiids_report.txt', 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        report_list.append(line.split('--')[1].strip().split('/', maxsplit=2)[2])
+                    last_line = lines[-1]
+                    content = last_line.split('--')[0].strip()
+                    end_time = datetime.strptime(content, '%Y-%m-%d %H:%M:%S.%f')
+                unique_list_down = [d for d in dev_list if d not in list(set(report_list))]
+                if not unique_list_down:
+                    get_log(log_path).info(f'超时时长{args.测试间隔时长}内接收到所有测试设备的关状态上报主题')
+                else:
+                    get_log(log_path).info(
+                        f'超时时长{args.测试间隔时长}内未接收到{unique_list_down}测试设备的关状态上报主题--单次子设备控制失败率{len(unique_list_down) / len(dev_list) * 100}%')
+                    fail_nums["close"] += 1
+                get_log(log_path).debug(
+                    f'app接口下发关操作时间为：{begin_time}\n网关接收到关操作主题时间：{control_time}\n最后一台子设备上报关状态时间：{end_time}')
+                get_log(log_path).info(
+                    f'app下发 --> 网关接收到关操作主题用时：{"{:.3f}".format((control_time - begin_time).total_seconds())} S')
+                get_log(log_path).info(
+                    f'网关接收到关操作主题 --> 最后一台子设备上报关状态用时：{"{:.3f}".format((end_time - control_time).total_seconds())} S')
+            except FileNotFoundError as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                get_log(log_path).error(f'    !!!!    mqtt监听客户端未接收到任何测试设备上报报文')
+                fail_nums["close"] += 1
+            except Exception as e:
+                get_log(log_path).error(f'发生如下错误：{e}')
+                fail_nums["close"] += 1
+            get_log(log_path).info("*" * gap_num)
+        get_log(log_path).info(f'测试结束，测试数据整理中...')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备共进行 {nums} 次开测试，失败 {fail_nums["open"]} 次')
+        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备共进行 {nums} 次关测试，失败 {fail_nums["close"]} 次')
     else:
         get_log(log_path).error(f'    !!!!    暂不支持此场景测试监控，敬请期待')
         sys.exit()

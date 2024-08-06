@@ -33,7 +33,7 @@ class MQTTClient:
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            get_log(self.log_path).debug("Connected to MQTT Broker")
+            get_log(self.log_path).debug(f"{self.username} connected to MQTT Broker -- {self.broker_address}")
         else:
             get_log(self.log_path).debug(f"Connection failed with code {rc}")
 
@@ -63,7 +63,7 @@ class MQTTClient:
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\fiids_report.txt', 'a') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}\n')
-        elif self.args.场景 == '联动场景' or self.args.场景 == '单控':
+        else:
             if message.topic == f'lliot/receiver/{self.args.Did}' and '"fiid":49408,' in playload:
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\gw_control.txt', 'w') as file:
@@ -100,6 +100,7 @@ class MQTTClient:
             self.client.username_pw_set(self.username, self.password)
         self.client.connect(self.broker_address)
         self.client.loop_start()
+        time.sleep(3)
 
     def publish(self, topic, message, qos=0, retain=False):
         get_log(self.log_path).debug(f"Publish message:'{message}' on topic:'{topic}'")
