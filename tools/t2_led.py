@@ -126,7 +126,8 @@ def t2_led(args, log_path):
     # 注册监听用户
     time.sleep(2)
     get_log(log_path).info(f'    ----    启用监听mqtt客户端')
-    did = get_stake_did()
+    environment = envs[evn]["云端环境_v"]
+    did = get_stake_did(accessToken, environment, log_path)
     username = "HA-CE-R31-001"
     sql_did = f"select device_secret from iot_device where did = '{did}'"
     device_secret_res = db_tool.getAll(sql_did)

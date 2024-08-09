@@ -19,9 +19,11 @@ class MQTTClient:
         self.broker_address = broker_address
         self.username = username
         self.password = password
+        self.subscribed_topics = []  # panwy240809新增：存储订阅的主题
 
         # 设置回调函数
         self.client.on_connect = self.on_connect
+        self.client.on_disconnect = self.on_disconnect  # panwy240809新增：断开连接的回调
         if tool == 't2_led':
             self.client.on_message = self.on_message_t2_led
         elif tool == 'direct_con_dev':
@@ -34,8 +36,30 @@ class MQTTClient:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             get_log(self.log_path).debug(f"{self.username} connected to MQTT Broker -- {self.broker_address}")
+            # 重连时重新订阅已订阅的主题
+            for topic, qos in self.subscribed_topics:
+                client.subscribe(topic, qos)
+                get_log(self.log_path).debug(f"Re-subscribed to {topic} with QoS {qos}")
         else:
             get_log(self.log_path).debug(f"Connection failed with code {rc}")
+
+    def on_disconnect(self, client, userdata, rc):
+        if rc != 0:
+            get_log(self.log_path).debug(f"{self.username} unexpected disconnection. Reconnecting...")
+            retries = 0
+            while rc != 0 and retries < 5:
+                retries += 1
+                try:
+                    get_log(self.log_path).debug(f"Attempting to reconnect, attempt {retries}/5")
+                    rc = client.reconnect()
+                    if rc == 0:
+                        get_log(self.log_path).debug("Reconnected successfully.")
+                        break
+                except Exception as e:
+                    get_log(self.log_path).debug(f"Reconnect attempt {retries} failed: {e}")
+                time.sleep(30)
+            if retries >= 5:
+                get_log(self.log_path).debug("Max retries reached. Could not reconnect.")
 
     def on_message(self, client, userdata, message):
         get_log(self.log_path).debug(f"Received message '{message.payload.decode()}' on topic '{message.topic}'")
@@ -107,6 +131,7 @@ class MQTTClient:
         self.client.publish(topic, message, qos, retain)
 
     def subscribe(self, topic, qos=0):
+        self.subscribed_topics.append((topic, qos))  # 记录订阅的主题及其QoS
         self.client.subscribe(topic, qos)
 
     def unsubscribe(self, topic):
@@ -123,20 +148,22 @@ class MQTTClient:
 
 
 if __name__ == "__main__":
-    username = "HA-CE-R31-001"
-    password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
-    log_path = f"D:\\pwy_log\\Leelen-ATT\\conf_builder_test.txt"
+    username = "HA-CE-R31-001:12300001000000000110"
+    # password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
+    password = "a0090d1c49ce52b4bd600077d9abb9d16738f8187f2cb5de212837f2f1c550d5"
+    log_path = f"D:\\pwy_log\\Leelen-ATT\\test.txt"
 
     # 创建MQTT客户端
-    mqtt_client = MQTTClient(log_path, "iottest.leelen.net", username=username, password=password,
-                             client_id="12300001000000000001")
+    mqtt_client = MQTTClient(log_path, "iotpre.leelen.net", username=username, password=password,
+                             client_id="12300001000000000110")
 
     # 连接到MQTT代理
     mqtt_client.connect()
     time.sleep(5)
-    #
-    # # 订阅主题
-    # mqtt_client.subscribe("lliot/receiver/12300001000000000006")
+
+    # 订阅主题
+    mqtt_client.subscribe("lliot/fiids_report/0001201bbc026efffea7b98e/2")
+    # time.sleep(600)
     #
     # # 发布消息
     # payload = {
@@ -164,5 +191,12 @@ if __name__ == "__main__":
     # # 停止消息循环
     # mqtt_client.stop_loop()
 
-    # 断开连接
+    # # 断开连接
+    # print("断开")
     # mqtt_client.disconnect()
+    # time.sleep(20)
+    # # 连接到MQTT代理
+    # print("重连")
+    # mqtt_client.connect()
+    # time.sleep(30)
+

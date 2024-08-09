@@ -1,11 +1,30 @@
 import os
 
 # 软件信息
-version = 24080614
+version = 24080916
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 conf_file_path = os.path.join(project_root, "configs", "config.cnf")
+welcome_mes = r"""
+                                                       ↑        ↑
+                                                    ↖↑↗  ↖↑↗
+                                                  _.-^^.......^^-._
+                                                _                     _
+                                               (<    ◔       ◔    >)
+                                                |           Ω          |
+                                                 \._  ↖___|___↗ _./
+                                                   ```--. . . . .--'''
+                                                         ||    ||
+                                                  .-=+||     ||+=-.
+                                                 `-=- +++++ -=-'
+                                                          |:  :|
+                                                          
+                                            ___.,~-林恩欢迎您-~,.___
+                                      ............................................................
+                                            让人们生活在五星级的家
+                                      ............................................................
+"""
 log_dir = "D:\\pwy_log\\Leelen-ATT\\"
 hfs_url = 'http://10.58.71.56/'
 item_about = {
@@ -36,7 +55,7 @@ item_sys = {
 }
 item_data_pressure_test_template = {
     'type': 'Link',
-    'menuTitle': '数据压测模板',
+    'menuTitle': '数据压测模板下载',
     'url': f'{hfs_url}data_pressure_test_template.xlsx'
 }
 item_script_link = {
@@ -53,6 +72,16 @@ item_json = {
     'type': 'Link',
     'menuTitle': 'Json编辑器',
     'url': 'https://www.bejson.com/jsoneditoronline/'
+}
+item_guide_web = {
+    'type': 'Link',
+    'menuTitle': '在线使用指南',
+    'url': 'https://note.youdao.com/s/NPKpqYVo'
+}
+item_guide = {
+    'type': 'Link',
+    'menuTitle': '使用指南下载',
+    'url': f'{hfs_url}Test-Tools_instructions.docx'
 }
 
 # IOT组件
@@ -180,6 +209,9 @@ readme_test = "**************************** 使用说明 ***********************
               "24041910：环境切换（修订虚拟设备IP、远程服务器IP）\n" \
               "24080211：添加数据压测模板链接、常用脚本下载链接\n" \
               "24080614：新增全局获取监听桩did，解决监听did多处登录bug\n" \
+              "24080717：新增欢迎页面\n" \
+              "24080813：日志存储文件修订为以分钟为粒度，解决同一天测试日志挤在同一个文件中\n" \
+              "24080916：修复mqtt监听桩意外断开后触发重连且重新订阅之前主题\n" \
               "\n" \
               "真实设备链路监控：\n" \
               "1、通过群组和联动的方式控制一个或多个测试设备（默认网关下挂所有设备）并监测全链路各个节点的用时；\n" \

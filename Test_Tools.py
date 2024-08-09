@@ -37,7 +37,7 @@ running = True
     header_show_title=False,
     menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template]},
           {'name': '工具', 'items': [item_rttys, item_json]},
-          {'name': '帮助', 'items': [item_about]}]
+          {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}]
 )
 def main():
     input_info = os.path.join(project_root, "input_info.ini")
@@ -47,10 +47,17 @@ def main():
     parser = GooeyParser(description=settings_msg)
     subs = parser.add_subparsers(help='tools', dest='tools')
 
+    home_page = subs.add_parser('******Welcome*******')
+    env = home_page.add_argument_group('欢迎使用Test-Tools', gooey_options={'columns': 1})
+    env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 330},
+                               default=welcome_mes)
+
     readme_parser = subs.add_parser('******家居助手*******')
+    env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_test
-    readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
+    env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
                                default=f"{default_txt}")
+
     time_parser = subs.add_parser('真实设备链路监控')
     env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
     scenes = ["iotpre", "iottest", "56", "58"]
@@ -60,7 +67,7 @@ def main():
     env.add_argument('场景', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('真实设备链路监控', '场景', fallback='单控'))
     env.add_argument('联动条件did', type=str, widget='TextField', default='none', help='仅联动场景填写，其他场景默认即可')
-    env.add_argument('最大控制数量', type=str, widget='TextField', default='All', help='All：网关下挂所有逻辑设备\n100：100个逻辑设备（自定义）\ndid：具体设备did')
+    env.add_argument('最大控制数量', type=str, widget='TextField', default='All', help='All：网关下挂所有逻辑设备\n100：100个逻辑设备（自定义）\ndid：具体设备did\n注：小立管家唤醒场景仅支持All')
     app = time_parser.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
                      default=config_manager.get_value('真实设备链路监控', '用户名', fallback='15606075512'))
@@ -180,8 +187,9 @@ def main():
                        default=config_manager.get_value('场景生成器', '生成总数', fallback='100'), help='注：为0时则删除所有场景')
 
     readme_parser = subs.add_parser('****海外门禁助手****')
+    env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_access_ctl
-    readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
+    env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
                                default=f"{default_txt}")
 
     web_ota = subs.add_parser('web-OTA中断电压测')
@@ -216,8 +224,9 @@ def main():
                        default=config_manager.get_value('web-reboot', '压测次数', fallback='100'))
 
     readme_parser = subs.add_parser('******开发助手*******')
+    env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_develop
-    readme_parser.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
+    env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
                                default=f"{default_txt}")
 
     cf_parser = subs.add_parser('配置生成器')
@@ -319,7 +328,7 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('数据压测器', '测试轮询次数', fallback='100'))
     path = data_pressure_tester.add_argument_group('数据文件路径')
-    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取点击左上角：文件-数据压测模板', default=config_manager.get_value('数据压测器', 'Path'))
+    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取点击左上角：文件-数据压测模板下载', default=config_manager.get_value('数据压测器', 'Path'))
 
     log_path = f"{log_dir}check_for_update.txt"
     if not check_for_update(log_path):
@@ -327,36 +336,36 @@ def main():
         input_info = vars(args)
         config_manager.set_value(input_info)
         config_manager.save_config()
-        day = datetime.now().strftime('%Y-%m-%d')
+        day = datetime.now().strftime('%Y-%m-%d-%H%M')
         if args.tools == '真实设备链路监控':
             log_path = f"{log_dir}真实设备链路监控_{day}.txt"
             audio_check_for_update(log_path)
             t2_led(args, log_path)
         elif args.tools == 'T2筒射灯色温压测':
-            log_path = f"{log_dir}t2_colorTemperaTure_{day}.txt"
+            log_path = f"{log_dir}T2筒射灯色温压测_{day}.txt"
             t2_colorTemperaTure(args, log_path)
         elif args.tools == '配置生成器':
-            log_path = f"{log_dir}conf_builder_{day}.txt"
+            log_path = f"{log_dir}配置生成器_{day}.txt"
             profile_check_for_update(log_path)
             conf_builder(args, log_path)
         elif args.tools == '属性生成器':
-            log_path = f"{log_dir}conf_builder_{day}.txt"
+            log_path = f"{log_dir}属性生成器_{day}.txt"
             property_builder(args, log_path)
         elif args.tools == '解绑绑定压测':
-            log_path = f"{log_dir}gw_bind_unbind_{day}.txt"
+            log_path = f"{log_dir}解绑绑定压测_{day}.txt"
             gw_bind_unbind_pressure(args, log_path)
         elif args.tools == '直连桩注册绑定':
-            log_path = f"{log_dir}direct_connect_dev_{day}.txt"
+            log_path = f"{log_dir}直连桩注册绑定_{day}.txt"
             direct_con_dev(args, log_path)
         elif args.tools == '合并Excel':
-            log_path = f"{log_dir}excel_tool_{day}.txt"
+            log_path = f"{log_dir}合并Excel_{day}.txt"
             excel_tool(args, log_path)
         elif args.tools == 'web-OTA中断电压测':
-            log_path = f"{log_dir}web_ota_{day}.txt"
+            log_path = f"{log_dir}web-OTA中断电压测_{day}.txt"
             driver_check_for_update(log_path)
             web_ota_tool(args, log_path)
         elif args.tools == 'web-reboot':
-            log_path = f"{log_dir}web_reboot_{day}.txt"
+            log_path = f"{log_dir}web-reboot_{day}.txt"
             driver_check_for_update(log_path)
             web_reboot_tool(args, log_path)
         elif args.tools == '虚拟设备链路监控':
