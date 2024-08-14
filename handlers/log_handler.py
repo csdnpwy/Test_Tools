@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 
 
 # 生成日志记录器
@@ -16,7 +17,8 @@ def get_log(log_path):
         # 创建日志处理器，一个输出到桌面，一个输出到文件
         screen_handler = logging.StreamHandler(stream=sys.stdout)
         screen_handler.setLevel(logging.INFO)
-        file_handler = logging.FileHandler(filename=log_path, mode='a', encoding='utf-8')
+        # 使用 RotatingFileHandler 进行日志轮换
+        file_handler = RotatingFileHandler(filename=log_path, maxBytes=400 * 1024 * 1024, backupCount=10, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         # 设置日志格式
         formatter = logging.Formatter("[%(levelname)s] %(asctime)s [%(filename)s:%(lineno)d, %(funcName)s] %(message)s")

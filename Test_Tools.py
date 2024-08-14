@@ -15,6 +15,7 @@ from tools.data_pressure import data_pressure
 from tools.direct_con_dev import direct_con_dev
 from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
+from tools.gw_simulator import gw_simulator
 from tools.property_builder import property_builder
 from tools.link_duration import link_duration
 from tools.scene_builder_tool import scene_builder_tool
@@ -186,6 +187,34 @@ def main():
     other.add_argument('生成总数', type=int, widget='TextField',
                        default=config_manager.get_value('场景生成器', '生成总数', fallback='100'), help='注：为0时则删除所有场景')
 
+    gateway_simulator = subs.add_parser('网关模拟器')
+    env = gateway_simulator.add_argument_group('预注册环境信息', gooey_options={'columns': 2})
+    envs = ["iotpre", "iottest", "56", "58"]
+    env.add_argument('测试环境', type=str, widget='Dropdown', choices=envs,
+                     default=config_manager.get_value('网关模拟器', '测试环境', fallback='iotpre'))
+    app = gateway_simulator.add_argument_group('预绑定APP信息', gooey_options={'columns': 2})
+    app.add_argument('用户名', type=str, widget='TextField',
+                     default=config_manager.get_value('网关模拟器', '用户名', fallback='15606075512'))
+    app.add_argument('密码', type=str, widget='TextField',
+                     default=config_manager.get_value('网关模拟器', '密码', fallback='test'))
+    app.add_argument('住家名称', type=str, widget='TextField',
+                     default=config_manager.get_value('网关模拟器', '住家名称', fallback='我的家'))
+    app.add_argument('房间', type=str, widget='TextField',
+                     default=config_manager.get_value('网关模拟器', '房间', fallback='客厅'))
+    gw = gateway_simulator.add_argument_group('预注册网关信息', gooey_options={'columns': 2})
+    gw_type = ['主网关', '备网关', '从网关', '盲网关']
+    gw.add_argument('网关类型', type=str, widget='Dropdown', choices=gw_type,
+                    default=config_manager.get_value('网关模拟器', '网关类型', fallback='从网关'))
+    gw.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('网关模拟器', 'Did'))
+    soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:371"]
+    gw.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
+                       default=config_manager.get_value('网关模拟器', '产品_软件模型_profileId'))
+    subDev = gateway_simulator.add_argument_group('预绑定子设备信息', gooey_options={'columns': 1})
+    subDev.add_argument('subDevDid', type=str, widget='TextField', default=config_manager.get_value('网关模拟器', 'subDevDid'))
+    subDevs = ["T2智能筒射灯:HAZB-AD-R82-001"]
+    subDev.add_argument('产品_软件模型', type=str, widget='Dropdown', choices=subDevs,
+                        default=config_manager.get_value('网关模拟器', '产品_软件模型'))
+
     readme_parser = subs.add_parser('****海外门禁助手****')
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_access_ctl
@@ -282,15 +311,15 @@ def main():
     stake.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
                        default=config_manager.get_value('直连桩注册绑定', '产品_软件模型_profileId'))
     subDev = direct_connect_dev.add_argument_group('预注册子设备桩信息', gooey_options={'columns': 1})
-    subDev.add_argument('subDid', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'subDid'))
+    subDev.add_argument('subDevDid', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'subDevDid'))
     subDevs = ["T2智能筒射灯:HAZB-AD-R82-001"]
     subDev.add_argument('产品_软件模型', type=str, widget='Dropdown', choices=subDevs,
                         default=config_manager.get_value('直连桩注册绑定', '产品_软件模型'))
 
-    profile_parser = subs.add_parser('属性生成器', help='虚拟设备属性生成器')
-    default_txt = profile_example
-    profile_parser.add_argument('真实设备属性值', help='', type=str, widget='Textarea', gooey_options={'height': 300},
-                                default=f"示例--抓包中subDevices值：\n{default_txt}")
+    # profile_parser = subs.add_parser('属性生成器', help='虚拟设备属性生成器')
+    # default_txt = profile_example
+    # profile_parser.add_argument('真实设备属性值', help='', type=str, widget='Textarea', gooey_options={'height': 300},
+    #                             default=f"示例--抓包中subDevices值：\n{default_txt}")
 
     excel_parser = subs.add_parser('合并Excel', help='合并Excel为一个文件')
     env = excel_parser.add_argument_group("必填参数", gooey_options={'columns': 1})
@@ -381,6 +410,9 @@ def main():
         elif args.tools == '数据压测器':
             log_path = f"{log_dir}数据压测器_{day}.txt"
             data_pressure(args, log_path)
+        elif args.tools == '网关模拟器':
+            log_path = f"{log_dir}网关模拟器_{day}.txt"
+            gw_simulator(args, log_path)
         else:
             pass
 

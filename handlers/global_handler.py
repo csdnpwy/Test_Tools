@@ -17,12 +17,13 @@ def get_stake_did(accessToken, env, log_path):
     conf_reder = ConfigReader(f"{log_dir}version.ini")
     stake_monitor = conf_reder.get_value('global_config', 'stake_monitor')
     if stake_monitor == "none":
-        did_pools = ['12300001000000000004', '12300001000000000005', '12300001000000000006', '12300001000000000110',
-                     '12300001000000000111', '12300001000000000666']
+        did_pools = ['12300001000000000111', '12300001000000000222', '12300001000000000333', '12300001000000000444', '12300001000000000555', '12300001000000000666']
         url = f"{env}/rest/app/community/isOnLine"
+        seq = 110
         for did in did_pools:
+            seq += 1
             data = {
-                "seq": 66,
+                "seq": seq,
                 "version": "v0.1",
                 "params": {
                     "did": f"{did}"
@@ -33,7 +34,7 @@ def get_stake_did(accessToken, env, log_path):
                 get_log(log_path).debug(f'本次测试推举监控did--{did}')
                 return did
         now = datetime.now()
-        formatted_time = now.strftime("%d%m%H%M%S")
+        formatted_time = now.strftime("%m%d%H%M%S")
         did = f"1230000100{formatted_time}"
     else:
         did = stake_monitor

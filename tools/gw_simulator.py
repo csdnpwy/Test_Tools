@@ -10,7 +10,12 @@ from lib.app.client_app import getMyAllHomeInfo, json, bindDevice
 from lib.mqtt.modules import dmgr_reg, dmgr_subDeviceOnlineStatus, dmgr_reportAddDevice, dmgr_reportPIIDS
 
 
-def direct_con_dev(args, log_path):
+def gw_simulator(args, log_path):
+    """
+    网关模拟器
+    :param args: 前端信息
+    :param log_path: 日志路径
+    """
     global db_tool
     get_log(log_path).debug(args)
     # 环境检测
@@ -53,7 +58,7 @@ def direct_con_dev(args, log_path):
         sys.exit()
     time.sleep(2)
     get_log(log_path).info("*" * gap_num)
-    get_log(log_path).info(f'Step 1：开始执行直连桩注册...')
+    get_log(log_path).info(f'Step 1：开始注册虚拟网关...')
     device_secret_sql = f"select device_secret from iot_device where did = '{args.Did}'"
     device_secret_res = db_tool.getAll(device_secret_sql)
     soft_name = args.产品_软件模型_profileId.split(':')[0]
@@ -74,22 +79,22 @@ def direct_con_dev(args, log_path):
         payload = dmgr_reg(args)['rsp']
         mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
         get_log(log_path).info(f'    ----    注册{args.Did}中...')
-        time.sleep(3)
+        time.sleep(5)
         # 停止消息循环
         mqtt_client.stop_loop()
         # 断开连接
         mqtt_client.disconnect()
         device_secret_res = db_tool.getAll(device_secret_sql)
         if device_secret_res:
-            get_log(log_path).info(f'        ----        直连桩did={args.Did}注册成功')
+            get_log(log_path).info(f'        ----        虚拟网关did={args.Did}注册成功')
             time.sleep(2)
         else:
-            get_log(log_path).error(f'        !!!!        直连桩did={args.Did}注册失败')
+            get_log(log_path).error(f'        !!!!        虚拟网关did={args.Did}注册失败')
             sys.exit()
     else:
-        get_log(log_path).info(f'    ----    直连桩did={args.Did}已在该测试环境注册')
+        get_log(log_path).info(f'    ----    虚拟网关did={args.Did}已在该测试环境注册')
         time.sleep(2)
-    get_log(log_path).info(f'Step 2：开始执行直连桩登录并启动主题监听...')
+    get_log(log_path).info(f'Step 2：开始执行虚拟网关MQTT登录并启动主题监听...')
     # 通过一机一密登录
     username = f"{soft_model}:{args.Did}"
     # 创建MQTT客户端
@@ -102,44 +107,45 @@ def direct_con_dev(args, log_path):
     mqtt_client.subscribe(f"lliot/receiver/{args.Did}")
     time.sleep(2)
     # 绑定设备
-    get_log(log_path).info(f'Step 3：开始执行直连桩绑定...')
+    get_log(log_path).info(f'Step 3：开始执行虚拟网关绑定APP...')
     dev_bind_sql = f"select count(*), group_id from newiot_device_bind_ext where did = '{args.Did}'"
     bind_res = db_tool.getAll(dev_bind_sql)
     time.sleep(5)
     if bind_res[0]['count(*)'] != 0:
-        get_log(log_path).info(f'    ----    直连桩已被住家{bind_res[0]["group_id"]}绑定')
+        get_log(log_path).info(f'    ----    虚拟网关已被住家{bind_res[0]["group_id"]}绑定')
     else:
         res = bindDevice(args, log_path)
-        waitTime = int(json.loads(res)['waitTime'])/1000
+        waitTime = int(json.loads(res)['waitTime']) / 1000
         for i in range(0, int(waitTime)):
             get_log(log_path).info(f'    ----    等待倒计时{int(waitTime) - i}S...')
             bind_res = db_tool.getAll(dev_bind_sql)
             if bind_res[0]['count(*)'] == 1:
-                get_log(log_path).info(f'    ----    直连桩绑定APP成功')
+                get_log(log_path).info(f'    ----    虚拟网关绑定APP成功')
                 break
-            elif i == int(waitTime)-1:
-                get_log(log_path).error(f'    !!!!    直连桩绑定APP失败')
+            elif i == int(waitTime) - 1:
+                get_log(log_path).error(f'    !!!!    虚拟网关绑定APP失败')
                 sys.exit()
             time.sleep(1)
     time.sleep(2)
     # 绑定子设备
-    get_log(log_path).info(f'Step 4：开始执行绑定子设备桩...')
-    subDev_sql = f"select direct_did from iot_device where did = '{args.subDid}'"
+    get_log(log_path).info(f'Step 4：开始执行虚拟网关绑定虚拟子设备...')
+    subDev_sql = f"select direct_did from iot_device where did = '{args.subDevDid}'"
     subDev_res = db_tool.getAll(subDev_sql)
     if not subDev_res:
         topic = f"lliot/receiver/{dev_manage_moduleID}"
-        messages = [dmgr_subDeviceOnlineStatus(args)['rsp'], dmgr_reportAddDevice(args)['rsp'], dmgr_reportPIIDS(args)['rsp']]
+        messages = [dmgr_subDeviceOnlineStatus(args)['rsp'], dmgr_reportAddDevice(args)['rsp'],
+                    dmgr_reportPIIDS(args)['rsp']]
         for message in messages:
             mqtt_client.publish(topic, json.dumps(message))
             time.sleep(2)
-        subDev_sql = f"select * from iot_device where did = '{args.subDid}' and direct_did = '{args.Did}'"
+        subDev_sql = f"select * from iot_device where did = '{args.subDevDid}' and direct_did = '{args.Did}'"
         subDev_res = db_tool.getAll(subDev_sql)
         if subDev_res:
-            get_log(log_path).info(f'    ----    子设备桩绑定成功')
+            get_log(log_path).info(f'    ----    虚拟子设备绑定成功')
         else:
-            get_log(log_path).error(f'    !!!!    子设备桩绑定失败')
+            get_log(log_path).error(f'    !!!!    虚拟子设备绑定失败')
     else:
-        get_log(log_path).info(f'    ----    子设备桩已被直连设备{subDev_res[0]["direct_did"]}绑定')
+        get_log(log_path).info(f'    ----    虚拟子设备已被其他设备{subDev_res[0]["direct_did"]}绑定')
     time.sleep(2)
     # 释放资源
     get_log(log_path).info(f'Step 5：停止主题监听，释放资源...')

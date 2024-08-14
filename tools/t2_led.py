@@ -77,11 +77,11 @@ def t2_led(args, log_path):
         get_log(log_path).info(f'    ----    APP获取网关绑定住家及房间正常')
         time.sleep(2)
         # 获取网关下挂设备
-        if args.最大控制数量 == 'All':
-            sql_devices_base = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
-        else:
+        if args.最大控制数量.isdigit():  # 数字
             limit = int(args.最大控制数量)
             sql_devices_base = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}' limit {limit}"
+        else:  # 非数字 默认All
+            sql_devices_base = f"select did, logic_name, siid, service_type, is_display from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}'"
         if args.场景 == "联动场景":
             sql_devices = f"select did, logic_name from iot_dc_logic_device where mactch_category = '1' and did = '{args.联动条件did}' and siid = '2'"
             devices_condition = db_tool.getAll(sql_devices)
@@ -90,7 +90,7 @@ def t2_led(args, log_path):
                 sys.exit()
             sql_devices = f"select did, logic_name, siid, service_type, is_display from (select * from iot_dc_logic_device where direct_did = '{args.Did}' and mactch_category = '1' and did != '{args.Did}') as subset where not (did = '{args.联动条件did}' and siid = '2')"
         elif args.场景 == "单控":
-            if args.最大控制数量 != 'All':
+            if args.最大控制数量 != 'All' and not args.最大控制数量.isdigit():
                 sql_devices = f"select did, logic_name, siid from iot_dc_logic_device where direct_did = '{args.Did}' and did = '{args.最大控制数量}' and siid = '2'"
             else:
                 sql_devices = sql_devices_base
@@ -155,7 +155,7 @@ def t2_led(args, log_path):
                 },
                 "seq": 1
             }
-            mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", str(payload))
+            mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
             get_log(log_path).info(f'        ----        注册mqtt监听用户中...')
             time.sleep(3)
             # 启动消息循环
@@ -201,7 +201,8 @@ def t2_led(args, log_path):
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/smartHome/classify/addOrModify"
         deviceList = []
         for device in devices_did:
-            devices = {'did': device['did'], 'directDid': args.Did, 'siid': device['siid'], 'logicName': device['logic_name'],
+            devices = {'did': device['did'], 'directDid': args.Did, 'siid': device['siid'],
+                       'logicName': device['logic_name'],
                        'serviceType': device['service_type'], 'isDisplay': device['is_display']}
             deviceList.append(devices)
         data = {
@@ -754,8 +755,10 @@ def t2_led(args, log_path):
             get_log(log_path).info("*" * gap_num)
         get_log(log_path).info(f'测试结束，测试数据整理中...')
         test_nums = len(devices_did) * nums
-        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次开测试，共计 {test_nums} 次，失败 {fail_nums["open"]} 次')
-        get_log(log_path).info(f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次关测试，共计 {test_nums} 次，失败 {fail_nums["close"]} 次')
+        get_log(log_path).info(
+            f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次开测试，共计 {test_nums} 次，失败 {fail_nums["open"]} 次')
+        get_log(log_path).info(
+            f'    ----    {len(devices_did)} 个逻辑设备各进行 {nums} 次关测试，共计 {test_nums} 次，失败 {fail_nums["close"]} 次')
     elif args.场景 == '手动场景':
         get_log(log_path).info(f'    ----    创建手动场景')
         url = f"{envs[args.测试环境]['云端环境_v']}/rest/app/community/scene/addOrModify"

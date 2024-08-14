@@ -6,6 +6,7 @@
 req_payload为向Did请求（收到）的报文
 rsp_payload为Did回复（发出）报文
 """
+import json
 import random
 
 from commons.variables import *
@@ -20,7 +21,7 @@ def dmgr_reg(args, module=dev_manage_moduleID, seq=666):
     :param args:
     :return: 设备注册mqtt报文、回复报文
     """
-    profileId = args.产品_软件模型_profileId.split(':')[2]
+    profileId = int(args.产品_软件模型_profileId.split(':')[2])
     softModel = args.产品_软件模型_profileId.split(':')[1]
     req_payload = None
     rsp_payload = {
@@ -29,6 +30,7 @@ def dmgr_reg(args, module=dev_manage_moduleID, seq=666):
         "dst": f"{module}",
         "version": "V1.0",
         "params": {
+            "lineProductModel": f"{softModel}",
             "did": f"{args.Did}",
             "softModel": f"{softModel}",
             "profileId": profileId
@@ -178,7 +180,7 @@ def dmgr_readPIIDS(args, module=dev_manage_moduleID, seq=666):
                             },
                             {
                                 "piid": 88,
-                                "value": f"{args.IP}"
+                                "value": "192.168.1.250"
                             },
                             {
                                 "piid": 239,
@@ -246,7 +248,7 @@ def dmgr_readPIIDS(args, module=dev_manage_moduleID, seq=666):
                             },
                             {
                                 "piid": 88,
-                                "value": f"{args.IP}"
+                                "value": f"192.168.1.250"
                             },
                             {
                                 "piid": 239,
@@ -317,7 +319,7 @@ def dmgr_writePIIDS(args, module=dev_manage_moduleID, seq=666):
 def dmgr_subDeviceOnlineStatus(args, module=dev_manage_moduleID, seq=666):
     """
     子设备在线状态上报mqtt报文和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:
@@ -337,7 +339,7 @@ def dmgr_subDeviceOnlineStatus(args, module=dev_manage_moduleID, seq=666):
         "dst": f"{module}",
         "version": "V1.0",
         "params": [{
-            "did": f"{args.subDid}",
+            "did": f"{args.subDevDid}",
             "status": 1
         }],
         "seq": seq
@@ -349,7 +351,7 @@ def dmgr_subDeviceOnlineStatus(args, module=dev_manage_moduleID, seq=666):
 def dmgr_reportAddDevice(args, module=dev_manage_moduleID, seq=666):
     """
     添加子设备mqtt报文和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:
@@ -373,7 +375,7 @@ def dmgr_reportAddDevice(args, module=dev_manage_moduleID, seq=666):
             "subDevices": [{
                 "errCode": "null",
                 "fatherDid": f"{args.Did}",
-                "did": f"{args.subDid}",
+                "did": f"{args.subDevDid}",
                 "profileId": 319,
                 "manufacturer": "LEELEN",
                 "lineProductModel": "HAZB-PS-R84-001",
@@ -392,7 +394,7 @@ def dmgr_reportAddDevice(args, module=dev_manage_moduleID, seq=666):
 def dmgr_reportPIIDS(args, module=dev_manage_moduleID, seq=666):
     """
     上报网络短地址属性和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:
@@ -412,7 +414,7 @@ def dmgr_reportPIIDS(args, module=dev_manage_moduleID, seq=666):
         "dst": f"{module}",
         "version": "V1.0",
         "params": {
-            "did": f"{args.subDid}",
+            "did": f"{args.subDevDid}",
             "siids": [{
                 "siid": 0,
                 "piids": [{
@@ -429,7 +431,7 @@ def dmgr_reportPIIDS(args, module=dev_manage_moduleID, seq=666):
 def dmgr_subDeviceOnlineStatus_rtczSensor(args, module=dev_manage_moduleID, seq=666):
     """
     子设备在线状态上报mqtt报文和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:
@@ -461,7 +463,7 @@ def dmgr_subDeviceOnlineStatus_rtczSensor(args, module=dev_manage_moduleID, seq=
 def dmgr_reportAddDevice_rtczSensor(args, module=dev_manage_moduleID, seq=667):
     """
     添加子设备mqtt报文和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:
@@ -504,7 +506,7 @@ def dmgr_reportAddDevice_rtczSensor(args, module=dev_manage_moduleID, seq=667):
 def dmgr_reportPIIDS_rtczSensor(args, module=dev_manage_moduleID, seq=668):
     """
     上报网络短地址属性和回复报文
-    适配条件：GUI需包含【测试环境、Did、subDid】
+    适配条件：GUI需包含【测试环境、Did、subDevDid】
     :param module:
     :param seq:
     :param args:

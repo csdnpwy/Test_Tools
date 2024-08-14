@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import json
 import time
 from commons.variables import *
 from ping3 import ping
@@ -150,7 +151,7 @@ def conf_builder(args, log_path):
                     },
                     "seq": 1
                 }
-                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", str(payload))
+                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
                 get_log(log_path).info(f'    ----    注册{did}中...')
                 time.sleep(3)
                 # 停止消息循环

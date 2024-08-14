@@ -117,7 +117,7 @@ class MQTTClient:
             rsp_playload = dmgr_writePIIDS(self.args, module=module, seq=seq)['rsp']
         else:
             return
-        self.publish(rsp_topic, str(rsp_playload))
+        self.publish(rsp_topic, json.dumps(rsp_playload))
 
     def connect(self):
         if self.username and self.password:
