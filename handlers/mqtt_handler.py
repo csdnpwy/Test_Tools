@@ -1,7 +1,4 @@
-import hashlib
 import json
-import os
-import random
 import time
 from datetime import datetime
 from commons.variables import *
@@ -12,6 +9,9 @@ from lib.mqtt.modules import dmgr_checkBind, dmgr_readPIIDS, dmgr_ctrlFIIDS, dmg
 
 
 class MQTTClient:
+    """
+    MQTT客户端操作
+    """
     def __init__(self, log_path, broker_address, username=None, password=None, client_id="", tool="default", args=None):
         self.args = args
         self.log_path = log_path
@@ -19,6 +19,7 @@ class MQTTClient:
         self.broker_address = broker_address
         self.username = username
         self.password = password
+        self.messages = {}  # panwy240816新增：存储订阅的主题报文
         self.subscribed_topics = []  # panwy240809新增：存储订阅的主题
 
         # 设置回调函数
@@ -34,6 +35,13 @@ class MQTTClient:
             self.client.on_message = self.on_message
 
     def on_connect(self, client, userdata, flags, rc):
+        """
+        连接操作
+        :param client:
+        :param userdata:
+        :param flags:
+        :param rc:
+        """
         if rc == 0:
             get_log(self.log_path).debug(f"{self.username} connected to MQTT Broker -- {self.broker_address}")
             # 重连时重新订阅已订阅的主题
@@ -44,6 +52,12 @@ class MQTTClient:
             get_log(self.log_path).debug(f"Connection failed with code {rc}")
 
     def on_disconnect(self, client, userdata, rc):
+        """
+        断开重连操作
+        :param client:
+        :param userdata:
+        :param rc:
+        """
         if rc != 0:
             get_log(self.log_path).debug(f"{self.username} unexpected disconnection. Reconnecting...")
             retries = 0
@@ -62,7 +76,19 @@ class MQTTClient:
                 get_log(self.log_path).debug("Max retries reached. Could not reconnect.")
 
     def on_message(self, client, userdata, message):
-        get_log(self.log_path).debug(f"Received message '{message.payload.decode()}' on topic '{message.topic}'")
+        """
+        默认接收到信息操作
+        :param client:
+        :param userdata:
+        :param message:
+        """
+        # 数据处理，去掉\t\n
+        cleaned_mes = message.payload.decode().replace('\t', '').replace('\n', '')
+        get_log(self.log_path).debug(f"Received message '{cleaned_mes}' on topic '{message.topic}'")
+        if message.topic in self.messages:
+            self.messages[message.topic].append(cleaned_mes)
+        else:
+            self.messages[message.topic] = [cleaned_mes]
 
     def on_message_sensor_link_duration(self, client, userdata, message):
         playload = str(message.payload).replace(" ", "")
@@ -120,6 +146,9 @@ class MQTTClient:
         self.publish(rsp_topic, json.dumps(rsp_playload))
 
     def connect(self):
+        """
+        连接操作
+        """
         if self.username and self.password:
             self.client.username_pw_set(self.username, self.password)
         self.client.connect(self.broker_address)
@@ -127,23 +156,55 @@ class MQTTClient:
         time.sleep(3)
 
     def publish(self, topic, message, qos=0, retain=False):
+        """
+        发布主题信息
+        :param topic:
+        :param message:
+        :param qos:
+        :param retain:
+        """
         get_log(self.log_path).debug(f"Publish message:'{message}' on topic:'{topic}'")
         self.client.publish(topic, message, qos, retain)
 
     def subscribe(self, topic, qos=0):
+        """
+        订阅主题
+        :param topic:
+        :param qos:
+        """
         self.subscribed_topics.append((topic, qos))  # 记录订阅的主题及其QoS
         self.client.subscribe(topic, qos)
 
     def unsubscribe(self, topic):
+        """
+        取消订阅
+        :param topic:
+        """
         self.client.unsubscribe(topic)
 
+    def get_message(self):
+        """
+        获取订阅主题及其消息
+        :return:
+        """
+        return self.messages
+
     def start_loop(self):
+        """
+        执行消息获取循环
+        """
         self.client.loop_start()
 
     def stop_loop(self):
+        """
+        停止消息获取循环
+        """
         self.client.loop_stop()
 
     def disconnect(self):
+        """
+        断开连接
+        """
         self.client.disconnect()
 
 

@@ -9,7 +9,9 @@ import pandas as pd
 from commons.variables import *
 from handlers.app_handler import get_terminal_info, app_request
 from handlers.error_handler import CustomError
+from handlers.global_handler import get_stake_did
 from handlers.log_handler import get_log
+from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
 
 
@@ -60,8 +62,6 @@ def data_pressure(args, log_path):
     except Exception as e:
         get_log(log_path).error(f"    !!!!    数据库连通性异常 {e}")
         sys.exit()
-    # 关闭数据库
-    db_tool.dispose()
     # 进行压测
     protocol = args.压测协议
     excel_path = args.Path
@@ -106,8 +106,107 @@ def data_pressure(args, log_path):
                                 get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
                                 raise CustomError("测试异常！")
             time.sleep(args.测试间隔时长)
+    if protocol == "MQTT":
+        # 获取接口token
+        terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.APP密码, log_path)
+        accessToken = json.loads(terminal_info)['params']['accessToken']
+        get_log(log_path).info(f'    ----    启用MQTT客户端')
+        environment = envs[evn]["云端环境_v"]
+        did = get_stake_did(accessToken, environment, log_path)
+        username = "HA-CE-R31-001"
+        sql_did = f"select device_secret from iot_device where did = '{did}'"
+        device_secret_res = db_tool.getAll(sql_did)
+        if not device_secret_res:
+            try:
+                # 创建MQTT客户端
+                password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
+                mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username,
+                                         password=password, client_id=did, args=args)
+                # 连接到MQTT代理
+                mqtt_client.connect()
+                # 订阅主题
+                mqtt_client.subscribe(f"lliot/receiver/{did}")
+                # 发布消息
+                payload = {
+                    "method": "dmgr.reg",
+                    "src": f"{did}",
+                    "dst": f'{dev_manage_moduleID}',
+                    "version": "V1.0",
+
+                    "params": {
+                        "did": f"{did}",
+                        "softModel": f"{username}",
+                        "profileId": 7
+                    },
+                    "seq": 1
+                }
+                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
+                get_log(log_path).info(f'        ----        注册MQTT桩中...')
+                time.sleep(3)
+                # 启动消息循环
+                mqtt_client.start_loop()
+                # 停止消息循环
+                mqtt_client.stop_loop()
+                # 断开连接
+                mqtt_client.disconnect()
+                device_secret_res = db_tool.getAll(sql_did)
+                if device_secret_res:
+                    print(f'        ----        桩did={did}注册成功')
+                    time.sleep(2)
+                else:
+                    get_log(log_path).error(f"        ----        桩did={did}注册失败！")
+                    sys.exit()
+            except Exception as e:
+                get_log(log_path).error(f'        !!!!        注册MQTT桩失败：{e}')
+                sys.exit()
+        else:
+            get_log(log_path).info(f'        ----        MQTT桩已存在，无需注册...')
+        # 一机一密连接到MQTT代理
+        mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=f"{username}:{did}",
+                                 password=f"{device_secret_res[0]['device_secret']}", client_id=did, args=args)
+        mqtt_client.connect()
+        time.sleep(5)
+        # 读取 Excel 文件
+        df = pd.read_excel(excel_path, sheet_name="Mqtt")
+        for num in range(0, int(nums)):
+            get_log(log_path).info(f'    ----    进行第{num + 1}轮压测')
+            for index, row in df.iterrows():
+                if row['是否执行'] == 'T':
+                    get_log(log_path).error(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
+                    if row['用例名称'] == "睡眠":
+                        time.sleep(int(row["请求数据"]))
+                        continue
+                    post_data = json.loads(row["请求数据"])
+                    expect_res = row["预期请求结果"]
+                    publish_topic = row["发布主题"]
+                    subscribe_topic = row["订阅主题"]
+                    mqtt_client.subscribe(subscribe_topic)
+                    time.sleep(1)
+                    mqtt_client.publish(publish_topic, json.dumps(post_data))
+                    time.sleep(5)
+                    mes = mqtt_client.get_message().get(subscribe_topic, None)
+                    for i in range(0, 3):
+                        if expect_res in str(mes):
+                            get_log(log_path).error(f"        ----        与预期请求结果相符，测试正常")
+                            break
+                        else:
+                            get_log(log_path).error(f"        !!!!        与预期请求结果不符，10S后重新发起请求")
+                            time.sleep(10)
+                            mqtt_client.publish(topic=publish_topic, message=post_data)
+                            mes = mqtt_client.get_message().get(subscribe_topic, None)
+                            if i == 2:
+                                get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
+                                raise CustomError("测试异常！")
+            time.sleep(args.测试间隔时长)
     else:
         get_log(log_path).error(f'    !!!!    暂不支持此协议压测，敬请期待')
         sys.exit()
     get_log(log_path).info("*" * gap_num)
+    try:
+        # 关闭数据库
+        db_tool.dispose()
+        # 关闭mqtt连接
+        mqtt_client.disconnect()
+    except Exception:
+        pass
     get_log(log_path).info(f'测试结束，具体压测数据请看日志')

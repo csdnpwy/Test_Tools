@@ -173,6 +173,7 @@ def t2_led(args, log_path):
                 sys.exit()
         except Exception as e:
             get_log(log_path).error(f'        !!!!        注册mqtt监听用户失败：{e}')
+            sys.exit()
     else:
         get_log(log_path).info(f'        ----        mqtt监听用户已存在，无需注册...')
     time.sleep(2)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import random
 from datetime import datetime
 
 from commons.variables import log_dir
@@ -17,10 +18,12 @@ def get_stake_did(accessToken, env, log_path):
     conf_reder = ConfigReader(f"{log_dir}version.ini")
     stake_monitor = conf_reder.get_value('global_config', 'stake_monitor')
     if stake_monitor == "none":
-        did_pools = ['12300001000000000111', '12300001000000000222', '12300001000000000333', '12300001000000000444', '12300001000000000555', '12300001000000000666']
+        did_pools = ['12300001000000000111', '12300001000000000222', '12300001000000000333', '12300001000000000444',
+                     '12300001000000000555', '12300001000000000666']
         url = f"{env}/rest/app/community/isOnLine"
         seq = 110
-        for did in did_pools:
+        for _ in range(0, 10):  # pwy0816：修订为随机从资源池获取，避免第一个did异常导致每次都异常
+            did = random.choice(did_pools)
             seq += 1
             data = {
                 "seq": seq,
@@ -40,7 +43,6 @@ def get_stake_did(accessToken, env, log_path):
         did = stake_monitor
     get_log(log_path).debug(f'本次测试推举监控did--{did}')
     return did
-
 
 # if __name__ == '__main__':
 #     res = get_stake_did()

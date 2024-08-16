@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24081416
+version = 24081616
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -304,6 +304,7 @@ readme_develop = "**************************** 使用说明 ********************
                  "1、实现通过excel为数据驱动对http、mqtt、tcp等协议的数据进行请求判断的压测\n" \
                  "修订记录；\n" \
                  "24080211：初版发行\n" \
+                 "24081616：支持mqtt协议数据压测\n" \
                  "\n"
 
 profile_example = "{\n  " \
