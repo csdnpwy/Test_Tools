@@ -83,27 +83,86 @@ def hmac_encode(algo, key, input_data):
     return result
 
 
-if __name__ == '__main__':
-    key = b"your_key_here123"  # 密钥必须是16、24或32字节长
-    iv = b'0123456789123456'
-    aes = AESCipher(key, mode=AES.MODE_ECB, iv=iv)
-    # 加密数据
-    plaintext = "Hello, AES!"
-    encrypted_text = aes.encrypt(plaintext)
-    print("加密后的密文:", encrypted_text)
-    # # 重新初始化AES实例
-    # aes = AESCipher(key, mode=AES.MODE_ECB, iv=iv)
-    # 解密数据
-    decrypted_text = aes.decrypt(encrypted_text)
-    print("解密后的明文:", decrypted_text)
+def custom_pad(in_data, block_size):
+    """
+    数据填充-适配网关局域网通信中AES加密数据填充
+    :param in_data: 源数据
+    :param block_size: 块大小
+    :return:
+    """
+    padding = block_size - (len(in_data) % block_size)
+    return in_data + b'\x00' * padding
 
-    # # hmac_encode示例
-    # # Constants
-    # HMACMD5_KEY = "@9jHaGa]"
-    # random = "FZNrADXQTSVIZgua"
-    # groupId = "1045263038358777856"
-    # # Concatenate key and random
-    # key_random = HMACMD5_KEY + random
-    # # Calculate HMAC-MD5
-    # password = hmac_encode("md5", key_random, groupId)
-    # print("Password:", password)
+
+def ch_to_hex(value):
+    """
+    单个字符转为十六进制
+    :param value: 单字符
+    :return: 转换后十六进制
+    """
+    if '0' <= value <= '9':
+        return ord(value) - ord('0')
+    elif 'A' <= value <= 'Z':
+        return ord(value) - ord('A') + 10
+    elif 'a' <= value <= 'z':
+        return ord(value) - ord('a') + 10
+    else:
+        return -1
+
+
+def str_to_hex(buf):
+    """
+    将字符串转为十六进制数组
+    :param buf: 字符串
+    :return: 转换字节串
+    """
+    hex_array = bytearray()
+    for i in range(0, len(buf), 2):
+        if i + 1 < len(buf):
+            high_nibble = ch_to_hex(buf[i])
+            low_nibble = ch_to_hex(buf[i + 1])
+            if high_nibble != -1 and low_nibble != -1:
+                hex_byte = (high_nibble << 4) | low_nibble
+                hex_array.append(hex_byte)
+            else:
+                return None
+        else:
+            return None
+    return hex_array
+
+
+def aes_encrypt(data, password):
+    """
+    网关局域网通信AES加密
+    :param data: 待加密数据
+    :param password: 初始密码
+    :return: 加密后数据
+    """
+    # print(f"预加密Payload：{data}")
+    AES_BLOCK_SIZE = 16
+    AES_IV = 'nwALi4=fjXM4nk#N'.encode()
+    # 创建 AES 加密器
+    aes_key = str_to_hex(password)
+    cipher = AES.new(aes_key, AES.MODE_CBC, AES_IV)
+    # 自定义填充
+    padded_data = custom_pad(data.encode(), AES_BLOCK_SIZE)
+    # 加密数据
+    enc_payload = cipher.encrypt(padded_data)
+    # print(f"加密Payload长度：{len(enc_payload)}")
+    return enc_payload.hex()
+
+
+def aes_decrypt(encrypted_data, password):
+    """
+    网关局域网通信AES解密
+    :param encrypted_data: 待解密数据的十六进制表示
+    :param password: 初始密码
+    :return: 解密后的数据
+    """
+    AES_IV = 'nwALi4=fjXM4nk#N'.encode()
+    aes_key = str_to_hex(password)
+    cipher = AES.new(aes_key, AES.MODE_CBC, AES_IV)
+    encrypted_data = bytes.fromhex(encrypted_data)
+    decrypted_data = cipher.decrypt(encrypted_data)
+    return decrypted_data.rstrip(b'\x00').decode('utf-8')
+

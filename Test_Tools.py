@@ -18,12 +18,12 @@ from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.gw_simulator import gw_simulator
 from tools.property_builder import property_builder
 from tools.link_duration import link_duration
+from tools.regular_filter import regular_filter
 from tools.scene_builder_tool import scene_builder_tool
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
 from tools.t2_led import t2_led
 from tools.web_ota_tool import web_ota_tool
 from tools.web_reboot_tool import web_reboot_tool
-from tools.zigbee_analyzer import zigbee_payload_analyzer
 
 running = True
 
@@ -36,7 +36,7 @@ running = True
     language='chinese',
     default_size=(750, 700),
     header_show_title=False,
-    menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template]},
+    menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template, item_subDev_info_template]},
           {'name': '工具', 'items': [item_rttys, item_json]},
           {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}]
 )
@@ -187,33 +187,39 @@ def main():
     other.add_argument('生成总数', type=int, widget='TextField',
                        default=config_manager.get_value('场景生成器', '生成总数', fallback='100'), help='注：为0时则删除所有场景')
 
-    gateway_simulator = subs.add_parser('网关模拟器')
+    gateway_simulator = subs.add_parser('从网关模拟器')
     env = gateway_simulator.add_argument_group('预注册环境信息', gooey_options={'columns': 2})
     envs = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=envs,
-                     default=config_manager.get_value('网关模拟器', '测试环境', fallback='iotpre'))
+                     default=config_manager.get_value('从网关模拟器', '测试环境', fallback='iotpre'))
     app = gateway_simulator.add_argument_group('预绑定APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
-                     default=config_manager.get_value('网关模拟器', '用户名', fallback='15606075512'))
+                     default=config_manager.get_value('从网关模拟器', '用户名', fallback='15606075512'))
     app.add_argument('密码', type=str, widget='TextField',
-                     default=config_manager.get_value('网关模拟器', '密码', fallback='test'))
+                     default=config_manager.get_value('从网关模拟器', '密码', fallback='test'))
     app.add_argument('住家名称', type=str, widget='TextField',
-                     default=config_manager.get_value('网关模拟器', '住家名称', fallback='我的家'))
+                     default=config_manager.get_value('从网关模拟器', '住家名称', fallback='我的家'))
     app.add_argument('房间', type=str, widget='TextField',
-                     default=config_manager.get_value('网关模拟器', '房间', fallback='客厅'))
-    gw = gateway_simulator.add_argument_group('预注册网关信息', gooey_options={'columns': 2})
-    gw_type = ['主网关', '备网关', '从网关', '盲网关']
-    gw.add_argument('网关类型', type=str, widget='Dropdown', choices=gw_type,
-                    default=config_manager.get_value('网关模拟器', '网关类型', fallback='从网关'))
-    gw.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('网关模拟器', 'Did'))
+                     default=config_manager.get_value('从网关模拟器', '房间', fallback='客厅'))
+    app.add_argument('主网关Did', type=str, widget='TextField',
+                     default=config_manager.get_value('从网关模拟器', '主网关Did'))
+    app.add_argument('主网关IP', type=str, widget='TextField',
+                     default=config_manager.get_value('从网关模拟器', '主网关IP'))
+    gw = gateway_simulator.add_argument_group('预注册网关信息', gooey_options={'columns': 1})
+    # gw_type = ['主网关', '备网关', '从网关', '盲网关']
+    # gw.add_argument('网关类型', type=str, widget='Dropdown', choices=gw_type,
+    #                 default=config_manager.get_value('从网关模拟器', '网关类型', fallback='从网关'))
+    gw.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('从网关模拟器', 'Did'))
     soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:371"]
     gw.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
-                       default=config_manager.get_value('网关模拟器', '产品_软件模型_profileId'))
+                       default=config_manager.get_value('从网关模拟器', '产品_软件模型_profileId'))
     subDev = gateway_simulator.add_argument_group('预绑定子设备信息', gooey_options={'columns': 1})
-    subDev.add_argument('subDevDid', type=str, widget='TextField', default=config_manager.get_value('网关模拟器', 'subDevDid'))
-    subDevs = ["T2智能筒射灯:HAZB-AD-R82-001"]
-    subDev.add_argument('产品_软件模型', type=str, widget='Dropdown', choices=subDevs,
-                        default=config_manager.get_value('网关模拟器', '产品_软件模型'))
+    subDev.add_argument('Path', type=str, widget='FileChooser', help='子设备信息模板获取：文件-虚拟子设备信息模板下载', default=config_manager.get_value('从网关模拟器', 'Path'))
+    other = gateway_simulator.add_argument_group('其他信息', gooey_options={'columns': 2})
+    other.add_argument('间隔时长', type=float, widget='TextField', help='模拟设备发起局域网信息请求间隔时长（S）',
+                       default=config_manager.get_value('从网关模拟器', '间隔时长', fallback='10'))
+    other.add_argument('测试次数', type=int, widget='TextField', help='所有子设备发送一轮信息请求为1次',
+                       default=config_manager.get_value('从网关模拟器', '测试次数', fallback='100'))
 
     readme_parser = subs.add_parser('****海外门禁助手****')
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
@@ -357,7 +363,7 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('数据压测器', '测试轮询次数', fallback='100'))
     path = data_pressure_tester.add_argument_group('数据文件路径')
-    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取点击左上角：文件-数据压测模板下载', default=config_manager.get_value('数据压测器', 'Path'))
+    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取：文件-数据压测模板下载', default=config_manager.get_value('数据压测器', 'Path'))
 
     log_path = f"{log_dir}check_for_update.txt"
     if not check_for_update(log_path):
@@ -403,15 +409,16 @@ def main():
             link_duration(args, log_path)
         elif args.tools == '正则过滤器':
             log_path = f"{log_dir}正则过滤器_{day}.txt"
-            zigbee_payload_analyzer(args, log_path)
+            regular_filter(args, log_path)
         elif args.tools == '场景生成器':
             log_path = f"{log_dir}场景生成器_{day}.txt"
             scene_builder_tool(args, log_path)
         elif args.tools == '数据压测器':
             log_path = f"{log_dir}数据压测器_{day}.txt"
             data_pressure(args, log_path)
-        elif args.tools == '网关模拟器':
-            log_path = f"{log_dir}网关模拟器_{day}.txt"
+        elif args.tools == '从网关模拟器':
+            log_path = f"{log_dir}从网关模拟器_{day}.txt"
+            config_check_for_update(log_path)
             gw_simulator(args, log_path)
         else:
             pass

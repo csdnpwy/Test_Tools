@@ -5,17 +5,17 @@ import shutil
 from handlers.log_handler import get_log
 
 
-def zigbee_payload_analyzer(args, log_path):
+def regular_filter(args, log_path):
     """
-    zigbee报文分析器
+    正则过滤器
     :param args: 前端参数
     :param log_path: 日志存储路径
     """
     file_path = args.文件
     filter = args.过滤正则
     output_dir = args.Path
-    output_file = f"{output_dir}/zigbee_mes.txt"
-    with open(file_path) as file:
+    output_file = f"{output_dir}/regular_filter.txt"
+    with open(file_path, encoding='utf-8') as file:
         text = file.read()
     matches = re.findall(filter, text)
 

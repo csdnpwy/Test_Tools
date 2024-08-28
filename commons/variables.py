@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24081616
+version = 24082617
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -57,6 +57,11 @@ item_data_pressure_test_template = {
     'type': 'Link',
     'menuTitle': '数据压测模板下载',
     'url': f'{hfs_url}data_pressure_test_template.xlsx'
+}
+item_subDev_info_template = {
+    'type': 'Link',
+    'menuTitle': '虚拟子设备信息模板下载',
+    'url': f'{hfs_url}subDev_info_template.xlsx'
 }
 item_script_link = {
     'type': 'Link',
@@ -248,10 +253,11 @@ readme_test = "**************************** 使用说明 ***********************
               "修订记录；\n" \
               "24072217：初版发行\n" \
               "\n" \
-              "网关模拟器：\n" \
-              "1、模拟虚拟网关与局域网内其他网关进行通信，目前支持模拟网关类型：从网关\n" \
+              "从网关模拟器：\n" \
+              "1、模拟虚拟从网关与局域网内主网关进行通信\n" \
               "修订记录；\n" \
               "24081410：初版发行\n" \
+              "24082617：修订以Excel为数据驱动进行局域网tcp通信\n" \
               "\n"
 
 readme_access_ctl = "**************************** 使用说明 ****************************\n" \

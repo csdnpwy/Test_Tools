@@ -1,10 +1,15 @@
 import select
 import socket
 import ssl
+import time
+
+from handlers.data_encrypt_handler import aes_decrypt
+from handlers.log_handler import get_log
 
 
 class TCPClient:
-    def __init__(self, server_host, server_port, timeout=5, type='tcp'):
+    def __init__(self, log_path, server_host, server_port, timeout=5, type='tcp'):
+        self.log_path = log_path
         self.timeout = timeout
         self.ssl_socket = None
         self.server_host = server_host
@@ -62,15 +67,74 @@ class TCPClient:
         if self.ssl_socket is None:
             self.ssl_socket = ssl_context.wrap_socket(self.client_socket, server_hostname=self.server_host)
         self.ssl_socket.sendall(message)
-        print(f"发送字节串 : {message}")
+        get_log(self.log_path).debug(f"发送ssl数据 {message}")
+        time.sleep(1)
 
-    def receive_ssl_data(self, buffer_size=1024):
+    def receive_ssl_data(self, buffer_size=1024, max_attempts=5, password=None):
+        """
+                接收ssl回复数据
+                :param password:
+                :param max_attempts:
+                :param buffer_size:
+                :return:
+                """
+        receive_payload = []
         if self.ssl_socket is not None:
-            data = self.ssl_socket.recv(buffer_size)
+            # 设置套接字为非阻塞模式
+            self.ssl_socket.setblocking(False)
+            attempts = 0
+            while attempts < max_attempts:
+                try:
+                    data = self.ssl_socket.recv(buffer_size)
+                    payload_hex = ''.join(format(byte, '02x') for byte in data)[22:-2]
+                    if password is None:
+                        payload = bytes.fromhex(payload_hex).decode('utf-8')
+                    else:
+                        payload = aes_decrypt(payload_hex, password)
+                    receive_payload.append(payload)
+                    if not data:
+                        break
+                except ssl.SSLWantReadError:
+                    # 捕获 SSLWantReadError 异常，继续循环
+                    attempts += 1
+                    continue
+                except BlockingIOError:
+                    break
+            # 恢复套接字为阻塞模式
+            self.ssl_socket.setblocking(True)
+            self.ssl_socket.settimeout(self.timeout)
         else:
-            data = None
-        return data
+            pass
+        get_log(self.log_path).debug(f"接收到ssl数据 {receive_payload}")
+        return receive_payload
+
+    def clear_ssl_buff(self, buffer_size=1024, max_attempts=5):
+        """
+        清理ssl连接缓冲区
+        :param max_attempts:
+        :param buffer_size:
+        """
+        # 设置套接字为非阻塞模式
+        self.ssl_socket.setblocking(False)
+        attempts = 0
+        while attempts < max_attempts:
+            try:
+                data = self.ssl_socket.recv(buffer_size)
+                if not data:
+                    break
+            except ssl.SSLWantReadError:
+                # 捕获 SSLWantReadError 异常，继续循环
+                attempts += 1
+                continue
+            except BlockingIOError:
+                break
+        # 恢复套接字为阻塞模式
+        self.ssl_socket.setblocking(True)
+        self.ssl_socket.settimeout(self.timeout)
 
     def close(self):
+        """
+        关闭连接
+        """
         self.client_socket.close()
         # print("Connection closed")
