@@ -279,7 +279,7 @@ def main():
     vDev = cf_parser.add_argument_group('测试设备信息', gooey_options={'columns': 1})
     vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
              "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
-             "虚拟设备5（216|218|219）"]
+             "虚拟设备5（216|218|219）", "虚拟设备6（220|222|223）"]
     vDev.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
                       default=config_manager.get_value('配置生成器', '虚拟设备'))
     stake = cf_parser.add_argument_group('云端桩信息（无特殊需求，注册以下默认值即可）', gooey_options={'columns': 2})

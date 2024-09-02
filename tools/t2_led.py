@@ -60,9 +60,19 @@ def t2_led(args, log_path):
         # 获取网关绑定的住家和房间
         sql_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{args.Did}' and logic_name like '网关服务%')"
         group_id = db_tool.getAll(sql_group_id)
+        get_log(log_path).debug(f"网关所在房间ID查询：\nSQL:{sql_group_id}\nRES:{group_id}")
         sql = f"select id, parent_id, name  from newiot_group ng  where id = '{group_id[0]['group_id']}'"
         res = db_tool.getAll(sql)
-        homeId = res[0]['parent_id']
+        get_log(log_path).debug(f"房间信息查询：\nSQL:{sql}\nRES:{res}")
+        # 兼容存在楼层的住家开始
+        floor_sql = f"select id, parent_id, name, type from newiot_group ng  where id = '{res[0]['parent_id']}'"
+        floor_res = db_tool.getAll(floor_sql)
+        get_log(log_path).debug(f"楼层信息查询：\nSQL:{floor_sql}\nRES:{floor_res}")
+        if floor_res[0]['type'] == 2:
+            homeId = floor_res[0]['parent_id']
+        else:
+            homeId = res[0]['parent_id']
+        # 兼容存在楼层的住家结束
         room = res[0]['name']
         roomID = res[0]['id']
         app = {
