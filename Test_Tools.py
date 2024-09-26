@@ -282,15 +282,6 @@ def main():
              "虚拟设备5（216|218|219）", "虚拟设备6（220|222|223）"]
     vDev.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
                       default=config_manager.get_value('配置生成器', '虚拟设备'))
-    stake = cf_parser.add_argument_group('云端桩信息（无特殊需求，注册以下默认值即可）', gooey_options={'columns': 2})
-    stake.add_argument('Did1', type=str, widget='TextField',
-                       default=config_manager.get_value('配置生成器', 'Did1', fallback='12300001000000000001'))
-    stake.add_argument('Did2', type=str, widget='TextField',
-                       default=config_manager.get_value('配置生成器', 'Did2', fallback='12300001000000000002'))
-    stake.add_argument('桩外设备did', type=str, widget='TextField',
-                       default=config_manager.get_value('配置生成器', '桩外设备did', fallback='12300001000000000003'))
-    stake.add_argument('Did100', type=str, widget='TextField',
-                       default=config_manager.get_value('配置生成器', 'Did100', fallback='12300001000000000100'))
     path = cf_parser.add_argument_group('配置存储路径')
     path.add_argument('Path', type=str, widget='DirChooser', default=config_manager.get_value('配置生成器', 'Path'))
 

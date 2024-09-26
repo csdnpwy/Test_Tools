@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24090210
+version = 24092610
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -153,7 +153,11 @@ vDev210 = {
     'zigbee设备did后缀3_v': '1c34f1fffeec742e',
     'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:ec:77:96',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:74:a3',
-    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:74:2e'
+    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:74:2e',
+    '设备did_v': '12300001000000test01',
+    '设备did2_v': '12300001000000test02',
+    '桩外设备did1_v': '12300001000000test03',
+    '设备did100_v': '12300001000000test04'
 }
 vDev204 = {
     '子设备IP地址1_v': '10.58.71.204',
@@ -164,18 +168,26 @@ vDev204 = {
     'zigbee设备did后缀3_v': '1c34f1fffeec74c9',
     'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:ec:73:f4',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:78:35',
-    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:74:c9'
+    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:74:c9',
+    '设备did_v': '12300001000000test05',
+    '设备did2_v': '12300001000000test06',
+    '桩外设备did1_v': '12300001000000test07',
+    '设备did100_v': '12300001000000test08'
 }
 vDev206 = {
-    '子设备IP地址1_v': '10.58.71.206',
-    '子设备IP地址2_v': '10.58.71.207',
-    '子设备IP地址3_v': '10.58.71.213',
-    'zigbee设备did后缀_v': '1c34f1fffeec78a2',
+    '子设备IP地址1_v': '10.25.25.206',
+    '子设备IP地址2_v': '10.25.25.207',
+    '子设备IP地址3_v': '10.25.25.213',
+    'zigbee设备did后缀_v': '1c34f1fffef0f095',
     'zigbee设备did后缀2_v': '1c34f1fffef0f5b7',
-    'zigbee设备did后缀3_v': '1c34f1fffef0f095',
-    'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:ec:78:a2',
+    'zigbee设备did后缀3_v': '1c34f1fffeec78a2',
+    'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:f0:f0:95',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:f0:f5:b7',
-    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:f0:f0:95'
+    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:78:a2',
+    '设备did_v': '12300001000000test09',
+    '设备did2_v': '12300001000000test10',
+    '桩外设备did1_v': '12300001000000test11',
+    '设备did100_v': '12300001000000test12'
 }
 vDev214 = {
     '子设备IP地址1_v': '10.58.71.214',
@@ -186,7 +198,11 @@ vDev214 = {
     'zigbee设备did后缀3_v': '94deb8fffecb08f8',
     'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:f0:f2:0a',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:87:63',
-    'zigbee设备did后缀3IEEE_v': '94:de:b8:ff:fe:cb:08:f8'
+    'zigbee设备did后缀3IEEE_v': '94:de:b8:ff:fe:cb:08:f8',
+    '设备did_v': '12300001000000test13',
+    '设备did2_v': '12300001000000test14',
+    '桩外设备did1_v': '12300001000000test15',
+    '设备did100_v': '12300001000000test16'
 }
 vDev216 = {
     '子设备IP地址1_v': '10.58.71.216',
@@ -197,7 +213,11 @@ vDev216 = {
     'zigbee设备did后缀3_v': '1c34f1fffeec762d',
     'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:ec:86:83',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:ec:76:b2',
-    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:76:2d'
+    'zigbee设备did后缀3IEEE_v': '1c:34:f1:ff:fe:ec:76:2d',
+    '设备did_v': '12300001000000test17',
+    '设备did2_v': '12300001000000test18',
+    '桩外设备did1_v': '12300001000000test19',
+    '设备did100_v': '12300001000000test20'
 }
 vDev220 = {
     '子设备IP地址1_v': '10.58.71.220',
@@ -208,7 +228,11 @@ vDev220 = {
     'zigbee设备did后缀3_v': '94deb8fffec5ceb9',
     'zigbee设备did后缀IEEE_v': '1c:34:f1:ff:fe:ec:79:36',
     'zigbee设备did后缀2IEEE_v': '1c:34:f1:ff:fe:f0:f0:43',
-    'zigbee设备did后缀3IEEE_v': '94:de:b8:ff:fe:c5:ce:b9'
+    'zigbee设备did后缀3IEEE_v': '94:de:b8:ff:fe:c5:ce:b9',
+    '设备did_v': '12300001000000test21',
+    '设备did2_v': '12300001000000test22',
+    '桩外设备did1_v': '12300001000000test23',
+    '设备did100_v': '12300001000000test24'
 }
 # 界面布局
 gap_num = 95
@@ -299,6 +323,7 @@ readme_develop = "**************************** 使用说明 ********************
                  "23120610：修订配置文件模板\n" \
                  "24041615：配置文件新增“第二房间id”键值\n" \
                  "24090210：兼容存在楼层的测试环境的住家ID获取\n" \
+                 "24092610：更新监听桩和虚拟设备配套使用，避免使用相同did多处登录造成的测试失败\n" \
                  "\n" \
                  "直连桩注册绑定：\n" \
                  "1、直连设备注册并绑定到对应APP；\n" \

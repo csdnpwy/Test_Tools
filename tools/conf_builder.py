@@ -128,14 +128,9 @@ def conf_builder(args, log_path):
         get_log(log_path).error(f'未找到{vdev}的任何配置，请确认虚拟子设备是否正确或让管理员添加对应数据！')
         time.sleep(2)
     # 云端桩did
-    get_log(log_path).info(f'Step 3：开始配置和检测云端桩信息...')
-    stake = {
-        '设备did_v': f'{args.Did1}',
-        '设备did2_v': f'{args.Did2}',
-        '桩外设备did1_v': f'{args.桩外设备did}',
-        '设备did100_v': f'{args.Did100}'
-    }
-    for did in stake.values():
+    get_log(log_path).info(f'Step 3：开始配置和检测云端监控桩信息...')
+    stake = list(vdevs[vdev].values())[-4:]
+    for did in stake:
         sql = f"select device_secret from iot_device where did = '{did}'"
         res = db_tool.getAll(sql)
         if not res:
@@ -182,7 +177,6 @@ def conf_builder(args, log_path):
         else:
             get_log(log_path).info(f'    ----    桩did={did}已在该测试环境注册')
             time.sleep(2)
-    replacements.update(stake)
     # 关闭数据库
     db_tool.dispose()
     # 创建配置文件
