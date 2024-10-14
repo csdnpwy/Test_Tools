@@ -10,11 +10,9 @@ from handlers.mysql_tool import MyPymysqlPool
 from handlers.profile_handler import replace_and_save
   
 def conf_builder(args, log_path):
-    global db_tool
+    global db_tool, input_file
     mysql_info = {}
     get_log(log_path).debug(args)
-    input_file = os.path.join(project_root, "template", "profile_template.txt")
-    # input_file = os.path.join(sys._MEIPASS, "template", "profile_template.txt")
     output_dir = args.Path
     replacements = {}
     # 环境判断
@@ -128,57 +126,65 @@ def conf_builder(args, log_path):
         get_log(log_path).error(f'未找到{vdev}的任何配置，请确认虚拟子设备是否正确或让管理员添加对应数据！')
         time.sleep(2)
     # 云端桩did
-    get_log(log_path).info(f'Step 3：开始配置和检测云端监控桩信息...')
-    stake = list(vdevs[vdev].values())[-4:]
-    for did in stake:
-        sql = f"select device_secret from iot_device where did = '{did}'"
-        res = db_tool.getAll(sql)
-        if not res:
-            get_log(log_path).info(f'    !!!!    桩did={did}未注册')
-            time.sleep(2)
-            try:
-                username = "HA-CE-R31-001"
-                password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
-                # 创建MQTT客户端
-                mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username, password=password, client_id=did)
-                # 连接到MQTT代理
-                mqtt_client.connect()
-                # 订阅主题
-                mqtt_client.subscribe(f"lliot/receiver/{did}")
-                # 发布消息
-                payload = {
-                    "method": "dmgr.reg",
-                    "src": f"{did}",
-                    "dst": f'{dev_manage_moduleID}',
-                    "version": "V1.0",
-                    "params": {
-                        "did": f"{did}",
-                        "softModel": f"{username}",
-                        "profileId": 7
-                    },
-                    "seq": 1
-                }
-                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
-                get_log(log_path).info(f'    ----    注册{did}中...')
-                time.sleep(3)
-                # 停止消息循环
-                mqtt_client.stop_loop()
-                # 断开连接
-                mqtt_client.disconnect()
-                query_res = db_tool.getAll(sql)
-                if query_res:
-                    get_log(log_path).info(f'        ----        桩did={did}注册成功')
-                else:
-                    get_log(log_path).info(f'        !!!!        桩did={did}注册失败')
+    if args.测试框架 == 'RF2.8':
+        get_log(log_path).info(f'Step 3：开始配置和检测云端监控桩信息...')
+        stake = list(vdevs[vdev].values())[-4:]
+        for did in stake:
+            sql = f"select device_secret from iot_device where did = '{did}'"
+            res = db_tool.getAll(sql)
+            if not res:
+                get_log(log_path).info(f'    !!!!    桩did={did}未注册')
                 time.sleep(2)
-            except Exception as e:
-                get_log(log_path).error(f"f'        ----        桩did={did}注册失败，报错{e}'")
+                try:
+                    username = "HA-CE-R31-001"
+                    password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
+                    # 创建MQTT客户端
+                    mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username, password=password, client_id=did)
+                    # 连接到MQTT代理
+                    mqtt_client.connect()
+                    # 订阅主题
+                    mqtt_client.subscribe(f"lliot/receiver/{did}")
+                    # 发布消息
+                    payload = {
+                        "method": "dmgr.reg",
+                        "src": f"{did}",
+                        "dst": f'{dev_manage_moduleID}',
+                        "version": "V1.0",
+                        "params": {
+                            "did": f"{did}",
+                            "softModel": f"{username}",
+                            "profileId": 7
+                        },
+                        "seq": 1
+                    }
+                    mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
+                    get_log(log_path).info(f'    ----    注册{did}中...')
+                    time.sleep(3)
+                    # 停止消息循环
+                    mqtt_client.stop_loop()
+                    # 断开连接
+                    mqtt_client.disconnect()
+                    query_res = db_tool.getAll(sql)
+                    if query_res:
+                        get_log(log_path).info(f'        ----        桩did={did}注册成功')
+                    else:
+                        get_log(log_path).info(f'        !!!!        桩did={did}注册失败')
+                    time.sleep(2)
+                except Exception as e:
+                    get_log(log_path).error(f"f'        ----        桩did={did}注册失败，报错{e}'")
+                    time.sleep(2)
+            else:
+                get_log(log_path).info(f'    ----    桩did={did}已在该测试环境注册')
                 time.sleep(2)
-        else:
-            get_log(log_path).info(f'    ----    桩did={did}已在该测试环境注册')
-            time.sleep(2)
     # 关闭数据库
     db_tool.dispose()
     # 创建配置文件
     get_log(log_path).info("*" * gap_num)
+    if args.测试框架 == 'RF2.8':
+        input_file = os.path.join(project_root, "template", "profile_template.txt")
+    elif args.测试框架 == 'RF7.0':
+        input_file = os.path.join(project_root, "template", "profile_template_rf7.txt")
+    else:
+        get_log(log_path).info(f'    !!!!    无法生成此测试框架-{args.测试框架}的配置文件')
+        exit()
     replace_and_save(input_file, output_dir, replacements, log_path)

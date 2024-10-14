@@ -142,6 +142,37 @@ def profile_check_for_update(log_path):
     else:
         get_log(log_path).debug(f'已是最新配置文件模板！')
 
+def profile_rf7_check_for_update(log_path):
+    """
+    配置生成器 - 配置文件检查更新（新框架RF7.0配置文件）
+    :param log_path: 日志存储路径
+    """
+    conf_reder = ConfigReader(f"{log_dir}version.ini")
+    profile = os.path.join(project_root, "template", "profile_template_rf7.txt")
+    profile_md5 = conf_reder.get_value('info', 'profileMD5_rf7').lower()
+    local_md5 = "test"
+    # 如果目录不存在则创建
+    profile_dir = os.path.dirname(profile)
+    if not os.path.exists(profile_dir):
+        os.makedirs(profile_dir)
+        get_log(log_path).debug(f'创建目录: {profile_dir}')
+    elif not os.path.exists(profile):
+        pass
+    else:
+        local_md5 = calculate_md5(profile).lower()
+    if local_md5 != profile_md5:
+        down_url = conf_reder.get_value('info', 'profile_url_rf7')
+        response = requests.get(down_url)
+        if response.status_code == 200:
+            with open(profile, 'wb') as temp_file:
+                temp_file.write(response.content)
+                get_log(log_path).debug(f'配置文件更新成功！\nprofile_md5_rf7:{profile_md5}\nlocal_md5_rf7:{local_md5}')
+        else:
+            get_log(log_path).info(f'配置文件更新失败！请求内容{response.status_code}-{response.text}')
+            sys.exit()
+    else:
+        get_log(log_path).debug(f'已是最新配置文件模板！')
+
 def config_check_for_update(log_path):
     """
     链路时长监控 - config配置文件检查更新

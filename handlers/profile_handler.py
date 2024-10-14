@@ -14,7 +14,11 @@ def replace_and_save(input_file, output_dir, replacements, log_path):
         for old_text, new_text in replacements.items():
             content = content.replace(old_text, new_text)
 
-        output_file = f"{output_dir}/配置及页面元素.txt"
+        input_file_name = os.path.basename(input_file)
+        if input_file_name == 'profile_template.txt':
+            output_file = f"{output_dir}/配置及页面元素.txt"
+        else:
+            output_file = f"{output_dir}/config.cnf"
         if os.path.isfile(output_file):
             # 文件存在，备份删除文件
             backup_filename = output_file + '.bak'

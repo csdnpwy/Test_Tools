@@ -8,7 +8,7 @@ from datetime import datetime
 from gooey import Gooey, GooeyParser
 from commons.variables import *
 from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update, \
-    config_check_for_update, audio_check_for_update
+    config_check_for_update, audio_check_for_update, profile_rf7_check_for_update
 from handlers.configReader import ConfigReader
 from tools.conf_builder import conf_builder
 from tools.data_pressure import data_pressure
@@ -269,6 +269,9 @@ def main():
     envs = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('配置生成器', '测试环境', fallback='iotpre'))
+    framework = ["RF2.8", "RF7.0"]
+    env.add_argument('测试框架', type=str, widget='Dropdown', choices=framework,
+                     default=config_manager.get_value('配置生成器', '测试框架', fallback='RF7.0'))
     app = cf_parser.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
                      default=config_manager.get_value('配置生成器', '用户名', fallback='15606075512'))
@@ -373,6 +376,7 @@ def main():
         elif args.tools == '配置生成器':
             log_path = f"{log_dir}配置生成器_{day}.txt"
             profile_check_for_update(log_path)
+            profile_rf7_check_for_update(log_path)
             conf_builder(args, log_path)
         elif args.tools == '属性生成器':
             log_path = f"{log_dir}属性生成器_{day}.txt"
