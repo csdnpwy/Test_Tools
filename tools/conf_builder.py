@@ -83,6 +83,7 @@ def conf_builder(args, log_path):
             '乐比邻密码_v': f'{args.密码}',
             '设备所在住家ID_v': f'{homeId}',
             '房间id': f'{room}id',
+            '房间_名称_V': f'{room}',
             '房间_id_v': f'{roomID}',
             # '房间2id': f'{room_2nd}id',
             '房间2_id_v': f'{room_2nd_id}'
