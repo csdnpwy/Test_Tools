@@ -103,8 +103,8 @@ class MQTTClient:
     def on_message_t2_led(self, client, userdata, message):
         playload = str(message.payload).replace(" ", "")
         if self.args.场景 == '群组' or self.args.场景 == '手动场景':
-            # 33106：执行群组  33031：执行场景  49408：面板开关--兼容集中式场景控制
-            if message.topic == f'lliot/receiver/{self.args.Did}' and ('"fiid":33106,' in playload or '"fiid":33031,' in playload or '"fiid":49408,' in playload):
+            # 33106：执行群组  33031：执行场景
+            if message.topic == f'lliot/receiver/{self.args.Did}' and ('"fiid":33106,' in playload or '"fiid":33031,' in playload):
                 current_time = datetime.now()
                 with open(f'{os.path.dirname(self.log_path)}\\gw_control.txt', 'w') as file:
                     file.write(f'{current_time} -- {message.topic} -- {playload}')
