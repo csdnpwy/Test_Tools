@@ -6,13 +6,16 @@ import json
 import sys
 import time
 import pandas as pd
+from ping3 import ping
+
 from commons.variables import *
 from handlers.app_handler import get_terminal_info, app_request
 from handlers.error_handler import CustomError
-from handlers.global_handler import get_stake_did
+from handlers.global_handler import get_stake_did, is_ping_successful
 from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
+from handlers.pdu_handler import ctl_pdu
 
 
 def data_pressure(args, log_path):
@@ -88,20 +91,55 @@ def data_pressure(args, log_path):
                     if row['用例名称'] == "睡眠":
                         time.sleep(int(row["请求数据"]))
                         continue
+                    elif row['用例名称'] == "迅威上电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', tcp_type='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            get_log(log_path).debug(f'        ----        Ping ip: {check_ip} Res: {ping_res}')
+                            if is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已上电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i+1)*5}S内还未上电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', tcp_type='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内上电失败')
+                                    raise CustomError("测试异常！")
+                        continue
+                    elif row['用例名称'] == "迅威下电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', tcp_type='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            if not is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已下电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未下电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', tcp_type='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内下电失败')
+                                    raise CustomError("测试异常！")
+                        continue
                     post_data = json.loads(row["请求数据"])
                     expect_res = row["预期请求结果"]
                     url = f"{envs[evn]['云端环境_v']}{row['请求URL']}"
-                    res = app_request(accessToken, url, post_data, log_path)
-                    get_log(log_path).debug(f"{res}")
                     for i in range(0, 3):
+                        res = app_request(accessToken, url, post_data, log_path)
+                        get_log(log_path).debug(f"{res}")
                         if expect_res in res:
                             get_log(log_path).error(f"        ----        与预期请求结果相符，测试正常")
                             break
                         else:
                             get_log(log_path).error(f"        !!!!        与预期请求结果不符，10S后重新发起请求")
                             time.sleep(10)
-                            res = app_request(accessToken, url, post_data, log_path)
-                            get_log(log_path).debug(f"{res}")
                             if i == 2:
                                 get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
                                 raise CustomError("测试异常！")

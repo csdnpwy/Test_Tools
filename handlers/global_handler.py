@@ -44,6 +44,22 @@ def get_stake_did(accessToken, env, log_path):
     get_log(log_path).debug(f'本次测试推举监控did--{did}')
     return did
 
+
+def is_ping_successful(ping_res):
+    """
+    判断ping结果，兼容多个环境结果
+    :param ping_res:
+    :return:
+    """
+    if ping_res is None:
+        return False
+    if isinstance(ping_res, bool):
+        return ping_res
+    try:
+        ping_value = float(ping_res)
+        return ping_value >= 0
+    except ValueError:
+        return False
 # if __name__ == '__main__':
 #     res = get_stake_did()
 #     print(res)

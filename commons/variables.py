@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24101216
+version = 24111217
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -351,6 +351,7 @@ readme_develop = "**************************** 使用说明 ********************
                  "修订记录；\n" \
                  "24080211：初版发行\n" \
                  "24081616：支持mqtt协议数据压测\n" \
+                 "24111217：支持讯威控制模块上下电\n" \
                  "\n"
 
 profile_example = "{\n  " \
