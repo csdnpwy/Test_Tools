@@ -4,6 +4,8 @@ import json
 import time
 from commons.variables import *
 from ping3 import ping
+
+from handlers.global_handler import is_ping_successful
 from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
@@ -109,15 +111,17 @@ def conf_builder(args, log_path):
         '虚拟设备3（210|211|212）': vDev210,
         '虚拟设备4（214|215|217）': vDev214,
         '虚拟设备5（216|218|219）': vDev216,
-        '虚拟设备6（220|222|223）': vDev220
+        '虚拟设备6（220|222|223）': vDev220,
+        '虚拟设备1（111）': vDev111,
+        '虚拟设备2（112）': vDev112
     }
-    vdev = args.虚拟设备
+    vdev = args.Zigbee虚拟设备
     if vdev in vdevs:
         replacements.update(vdevs[vdev])
         ips = list(vdevs[vdev].values())[:3]
         for ip in ips:
             ping_res = ping(f"{ip}")
-            if ping_res is not None:
+            if is_ping_successful(ping_res):
                 get_log(log_path).info(f'    ----    虚拟设备ip={ip}连通性正常')
                 time.sleep(2)
             else:
@@ -125,6 +129,22 @@ def conf_builder(args, log_path):
                 time.sleep(2)
     else:
         get_log(log_path).error(f'未找到{vdev}的任何配置，请确认虚拟子设备是否正确或让管理员添加对应数据！')
+        time.sleep(2)
+    tp_bus_vdev = args.tp_bus虚拟设备
+    if tp_bus_vdev in vdevs:
+        replacements.update(vdevs[tp_bus_vdev])
+        ip = list(vdevs[tp_bus_vdev].values())[0]
+        ping_res = ping(f"{ip}")
+        if is_ping_successful(ping_res):
+            get_log(log_path).info(f'    ----    虚拟设备ip={ip}连通性正常')
+            time.sleep(2)
+        else:
+            get_log(log_path).info(f'    !!!!    虚拟设备ip={ip}无法连通,请检查设备')
+            time.sleep(2)
+    elif tp_bus_vdev == 'None':
+        pass
+    else:
+        get_log(log_path).error(f'未找到{tp_bus_vdev}的任何配置，请确认虚拟子设备是否正确或让管理员添加对应数据！')
         time.sleep(2)
     # 云端桩did
     if args.测试框架 == 'RF2.8':

@@ -5,27 +5,11 @@ from ping3 import ping
 
 from commons.variables import project_root
 from handlers.error_handler import CustomError
+from handlers.global_handler import is_ping_successful
 from handlers.log_handler import get_log
 from handlers.pdu_handler import ctl_pdu
 from handlers.selenium_handler import SeleniumWrapper
 from selenium.webdriver.common.by import By
-
-
-def is_ping_successful(ping_res):
-    """
-    判断ping结果，兼容多个环境结果
-    :param ping_res:
-    :return:
-    """
-    if ping_res is None:
-        return False
-    if isinstance(ping_res, bool):
-        return ping_res
-    try:
-        ping_value = float(ping_res)
-        return ping_value >= 0
-    except ValueError:
-        return False
 
 def web_ota_tool(args, log_path):
     """

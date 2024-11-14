@@ -36,7 +36,8 @@ running = True
     language='chinese',
     default_size=(750, 700),
     header_show_title=False,
-    menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template, item_subDev_info_template]},
+    menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template,
+                                   item_subDev_info_template]},
           {'name': '工具', 'items': [item_rttys, item_json]},
           {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}]
 )
@@ -51,13 +52,13 @@ def main():
     home_page = subs.add_parser('******Welcome*******')
     env = home_page.add_argument_group('欢迎使用Test-Tools', gooey_options={'columns': 1})
     env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 330},
-                               default=welcome_mes)
+                     default=welcome_mes)
 
     readme_parser = subs.add_parser('******家居助手*******')
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_test
     env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
-                               default=f"{default_txt}")
+                     default=f"{default_txt}")
 
     time_parser = subs.add_parser('真实设备链路监控')
     env = time_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
@@ -68,7 +69,8 @@ def main():
     env.add_argument('场景', type=str, widget='Dropdown', choices=envs,
                      default=config_manager.get_value('真实设备链路监控', '场景', fallback='单控'))
     env.add_argument('联动条件did', type=str, widget='TextField', default='none', help='仅联动场景填写，其他场景默认即可')
-    env.add_argument('最大控制数量', type=str, widget='TextField', default='All', help='All：网关下挂所有逻辑设备\n100：100个逻辑设备（自定义）\ndid：具体设备did\n注：小立管家唤醒场景仅支持All')
+    env.add_argument('最大控制数量', type=str, widget='TextField', default='All',
+                     help='All：网关下挂所有逻辑设备\n100：100个逻辑设备（自定义）\ndid：具体设备did\n注：小立管家唤醒场景仅支持All')
     app = time_parser.add_argument_group('测试APP信息', gooey_options={'columns': 2})
     app.add_argument('用户名', type=str, widget='TextField',
                      default=config_manager.get_value('真实设备链路监控', '用户名', fallback='15606075512'))
@@ -212,9 +214,10 @@ def main():
     gw.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('从网关模拟器', 'Did'))
     soft_model = ["Zigbee无线网关3.0:HAZB-CE-R15-112:371"]
     gw.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
-                       default=config_manager.get_value('从网关模拟器', '产品_软件模型_profileId'))
+                    default=config_manager.get_value('从网关模拟器', '产品_软件模型_profileId'))
     subDev = gateway_simulator.add_argument_group('预绑定子设备信息', gooey_options={'columns': 1})
-    subDev.add_argument('Path', type=str, widget='FileChooser', help='子设备信息模板获取：文件-虚拟子设备信息模板下载', default=config_manager.get_value('从网关模拟器', 'Path'))
+    subDev.add_argument('Path', type=str, widget='FileChooser', help='子设备信息模板获取：文件-虚拟子设备信息模板下载',
+                        default=config_manager.get_value('从网关模拟器', 'Path'))
     other = gateway_simulator.add_argument_group('其他信息', gooey_options={'columns': 2})
     other.add_argument('间隔时长', type=float, widget='TextField', help='模拟设备发起局域网信息请求间隔时长（S）',
                        default=config_manager.get_value('从网关模拟器', '间隔时长', fallback='10'))
@@ -225,7 +228,7 @@ def main():
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_access_ctl
     env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
-                               default=f"{default_txt}")
+                     default=f"{default_txt}")
 
     web_ota = subs.add_parser('web-OTA中断电压测')
     env = web_ota.add_argument_group('测试环境信息', gooey_options={'columns': 2})
@@ -262,7 +265,7 @@ def main():
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
     default_txt = readme_develop
     env.add_argument(' ', help='', type=str, widget='Textarea', gooey_options={'height': 600},
-                               default=f"{default_txt}")
+                     default=f"{default_txt}")
 
     cf_parser = subs.add_parser('配置生成器')
     env = cf_parser.add_argument_group('测试环境信息', gooey_options={'columns': 2})
@@ -280,11 +283,14 @@ def main():
     gateway = cf_parser.add_argument_group('测试网关信息', gooey_options={'columns': 2})
     gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('配置生成器', 'Did'))
     vDev = cf_parser.add_argument_group('测试设备信息', gooey_options={'columns': 1})
-    vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
-             "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
-             "虚拟设备5（216|218|219）", "虚拟设备6（220|222|223）"]
-    vDev.add_argument('虚拟设备', type=str, widget='Dropdown', choices=vDevs,
-                      default=config_manager.get_value('配置生成器', '虚拟设备'))
+    zigbee_vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
+                    "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
+                    "虚拟设备5（216|218|219）", "虚拟设备6（220|222|223）"]
+    vDev.add_argument('Zigbee虚拟设备', type=str, widget='Dropdown', choices=zigbee_vDevs,
+                      default=config_manager.get_value('配置生成器', 'Zigbee虚拟设备'))
+    tp_bus_vDevs = ["None", "虚拟设备1（111）", "虚拟设备2（112）"]
+    vDev.add_argument('tp_bus虚拟设备', type=str, widget='Dropdown', choices=tp_bus_vDevs,
+                      default=config_manager.get_value('配置生成器', 'tp_bus虚拟设备'))
     path = cf_parser.add_argument_group('配置存储路径')
     path.add_argument('Path', type=str, widget='DirChooser', default=config_manager.get_value('配置生成器', 'Path'))
 
@@ -311,7 +317,8 @@ def main():
     stake.add_argument('产品_软件模型_profileId', type=str, widget='Dropdown', choices=soft_model,
                        default=config_manager.get_value('直连桩注册绑定', '产品_软件模型_profileId'))
     subDev = direct_connect_dev.add_argument_group('预注册子设备桩信息', gooey_options={'columns': 1})
-    subDev.add_argument('subDevDid', type=str, widget='TextField', default=config_manager.get_value('直连桩注册绑定', 'subDevDid'))
+    subDev.add_argument('subDevDid', type=str, widget='TextField',
+                        default=config_manager.get_value('直连桩注册绑定', 'subDevDid'))
     subDevs = ["T2智能筒射灯:HAZB-AD-R82-001"]
     subDev.add_argument('产品_软件模型', type=str, widget='Dropdown', choices=subDevs,
                         default=config_manager.get_value('直连桩注册绑定', '产品_软件模型'))
@@ -357,7 +364,8 @@ def main():
     other.add_argument('测试轮询次数', type=int, widget='TextField',
                        default=config_manager.get_value('数据压测器', '测试轮询次数', fallback='100'))
     path = data_pressure_tester.add_argument_group('数据文件路径')
-    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取：文件-数据压测模板下载', default=config_manager.get_value('数据压测器', 'Path'))
+    path.add_argument('Path', type=str, widget='FileChooser', help='数据文件模板获取：文件-数据压测模板下载',
+                      default=config_manager.get_value('数据压测器', 'Path'))
 
     log_path = f"{log_dir}check_for_update.txt"
     if not check_for_update(log_path):

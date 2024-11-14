@@ -60,6 +60,3 @@ def is_ping_successful(ping_res):
         return ping_value >= 0
     except ValueError:
         return False
-# if __name__ == '__main__':
-#     res = get_stake_did()
-#     print(res)
