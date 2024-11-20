@@ -45,10 +45,11 @@ def check_for_update(log_path):
                 local_file.write(response.content)
             conf_reder = ConfigReader(f"{log_dir}version.ini")
             ver = conf_reder.get_value('info', 'version')
+            description = conf_reder.get_value('info', 'description')
             # 软件版本更新
             if int(ver) > int(current_version):
                 # 创建确认对话框
-                message = f"发现新版本{ver},是否更新？"
+                message = f"发现新版本{ver},是否更新？\n\n更新内容：\n{description}"
                 confirmed = messagebox.askyesno("确认", message)
                 # 根据用户的选择执行操作
                 if confirmed:

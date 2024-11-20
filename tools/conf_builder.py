@@ -5,6 +5,7 @@ import time
 from commons.variables import *
 from ping3 import ping
 
+from handlers.error_handler import CustomError
 from handlers.global_handler import is_ping_successful
 from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
@@ -36,7 +37,7 @@ def conf_builder(args, log_path):
                       'charset': 'utf8'}
     else:
         get_log(log_path).error(f'未找到{evn}环境下的任何配置，请确认环境是否正确或让管理员添加对应数据！')
-        time.sleep(2)
+        raise CustomError("存在异常，终止配置文件生成！")
     # APP判断
     try:
         # 判断用户名密码是否正确
@@ -47,7 +48,7 @@ def conf_builder(args, log_path):
         user_pw_sql_res = db_tool.getAll(user_pw_sql)
         if not user_pw_sql_res:
             get_log(log_path).info(f'    !!!!    用户名不存在，请更正')
-            time.sleep(2)
+            raise CustomError("存在异常，终止配置文件生成！")
         else:
             get_log(log_path).info(f'    ----    用户名存在')
             time.sleep(2)
@@ -55,10 +56,16 @@ def conf_builder(args, log_path):
                 get_log(log_path).info(f'    ----    密码正确')
                 time.sleep(2)
             else:
-                get_log(log_path).info(f'    !!!!    密码错误，请更正')
-                time.sleep(2)
+                get_log(log_path).error(f'    !!!!    密码错误，请更正')
+                raise CustomError("存在异常，终止配置文件生成！")
         # 获取网关绑定的住家和房间
-        sql_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{args.Did}' and siid = '2')"
+        if args.tp_bus虚拟设备 == '配套网关虚拟设备1（111）':
+            did = gw_vDev111['网关did_v']
+        elif args.tp_bus虚拟设备 == '配套网关虚拟设备2（112）':
+            did = gw_vDev112['网关did_v']
+        else:
+            did = args.Did
+        sql_group_id = f"select group_id from newiot_device_group ndg  where biz_id = (select id from iot_dc_logic_device idld  where did = '{did}' and siid = '2')"
         group_id = db_tool.getAll(sql_group_id)
         get_log(log_path).debug(f"网关所在房间ID查询：\nSQL:{sql_group_id}\nRES:{group_id}")
         sql = f"select id, parent_id, name  from newiot_group ng  where id = '{group_id[0]['group_id']}'"
@@ -95,9 +102,18 @@ def conf_builder(args, log_path):
         time.sleep(2)
         get_log(log_path).info(f'    ----    APP获取网关绑定住家及房间正常')
         time.sleep(2)
+        # 判断住家信息与手机账号是否匹配
+        group_src_sql = f"select phone from newiot_account_src nas where src_id = (select src_id  from newiot_src_group_detail nsgd where group_id = '{homeId}' and permission_type = 0)"
+        res = db_tool.getAll(group_src_sql)
+        if res[0]['phone'] == username:
+            get_log(log_path).info(f'    ----    住家信息与手机账号匹配正常')
+            time.sleep(2)
+        else:
+            get_log(log_path).error(f'    !!!!    网关所在住家创建者非{username}')
+            raise CustomError("存在异常，终止配置文件生成！")
     except Exception as e:
         get_log(log_path).error(f"APP信息处理发生错误: {e}\n1、请确保所选环境与APP一致\n2、确保网关did填写正确\n3、确保住家下存在两个房间")
-        time.sleep(2)
+        raise CustomError("存在异常，终止配置文件生成！")
     # 网关
     gateway = {
         '网关did_v': f'{args.Did}'
@@ -113,7 +129,9 @@ def conf_builder(args, log_path):
         '虚拟设备5（216|218|219）': vDev216,
         '虚拟设备6（220|222|223）': vDev220,
         '虚拟设备1（111）': vDev111,
-        '虚拟设备2（112）': vDev112
+        '虚拟设备2（112）': vDev112,
+        '配套网关虚拟设备1（111）': gw_vDev111,
+        '配套网关虚拟设备2（112）': gw_vDev112
     }
     vdev = args.Zigbee虚拟设备
     if vdev in vdevs:
@@ -126,7 +144,7 @@ def conf_builder(args, log_path):
                 time.sleep(2)
             else:
                 get_log(log_path).info(f'    !!!!    虚拟设备ip={ip}无法连通,请检查设备')
-                time.sleep(2)
+                raise CustomError("存在异常，终止配置文件生成！")
     else:
         get_log(log_path).error(f'未找到{vdev}的任何配置，请确认虚拟子设备是否正确或让管理员添加对应数据！')
         time.sleep(2)
@@ -140,7 +158,7 @@ def conf_builder(args, log_path):
             time.sleep(2)
         else:
             get_log(log_path).info(f'    !!!!    虚拟设备ip={ip}无法连通,请检查设备')
-            time.sleep(2)
+            raise CustomError("存在异常，终止配置文件生成！")
     elif tp_bus_vdev == 'None':
         pass
     else:
@@ -190,6 +208,7 @@ def conf_builder(args, log_path):
                         get_log(log_path).info(f'        ----        桩did={did}注册成功')
                     else:
                         get_log(log_path).info(f'        !!!!        桩did={did}注册失败')
+                        raise CustomError("存在异常，终止配置文件生成！")
                     time.sleep(2)
                 except Exception as e:
                     get_log(log_path).error(f"f'        ----        桩did={did}注册失败，报错{e}'")
@@ -207,5 +226,5 @@ def conf_builder(args, log_path):
         input_file = os.path.join(project_root, "template", "profile_template_rf7.txt")
     else:
         get_log(log_path).info(f'    !!!!    无法生成此测试框架-{args.测试框架}的配置文件')
-        exit()
+        raise CustomError("存在异常，终止配置文件生成！")
     replace_and_save(input_file, output_dir, replacements, log_path)

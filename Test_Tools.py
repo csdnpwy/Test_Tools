@@ -281,14 +281,15 @@ def main():
     app.add_argument('密码', type=str, widget='TextField',
                      default=config_manager.get_value('配置生成器', '密码', fallback='test'))
     gateway = cf_parser.add_argument_group('测试网关信息', gooey_options={'columns': 2})
-    gateway.add_argument('Did', type=str, widget='TextField', default=config_manager.get_value('配置生成器', 'Did'))
+    gateway.add_argument('Did', type=str, widget='TextField', help='注：若tp_bus虚拟设备使用配套两线网关时填写None',
+                         default=config_manager.get_value('配置生成器', 'Did', fallback='None'))
     vDev = cf_parser.add_argument_group('测试设备信息', gooey_options={'columns': 1})
     zigbee_vDevs = ["虚拟设备1（204|208|209）", "虚拟设备2（206|207|213）",
                     "虚拟设备3（210|211|212）", "虚拟设备4（214|215|217）",
                     "虚拟设备5（216|218|219）", "虚拟设备6（220|222|223）"]
     vDev.add_argument('Zigbee虚拟设备', type=str, widget='Dropdown', choices=zigbee_vDevs,
                       default=config_manager.get_value('配置生成器', 'Zigbee虚拟设备'))
-    tp_bus_vDevs = ["None", "虚拟设备1（111）", "虚拟设备2（112）"]
+    tp_bus_vDevs = ['None', "配套网关虚拟设备1（111）", "配套网关虚拟设备2（112）", "虚拟设备1（111）", "虚拟设备2（112）"]
     vDev.add_argument('tp_bus虚拟设备', type=str, widget='Dropdown', choices=tp_bus_vDevs,
                       default=config_manager.get_value('配置生成器', 'tp_bus虚拟设备'))
     path = cf_parser.add_argument_group('配置存储路径')
