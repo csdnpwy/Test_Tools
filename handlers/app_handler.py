@@ -80,6 +80,8 @@ def app_request(accesstoken, url, data, log_path):
         'Content-Type': 'application/json',
         'Authorization': f'{accesstoken}'
     }
+    if isinstance(data, str):
+        data = json.loads(data)
     response = requests.post(url, headers=custom_headers, json=data)
     get_log(log_path).debug(f"url={url}\ndata={data}\nres={response.text}")
     if response.status_code == 200:

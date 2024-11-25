@@ -1,3 +1,4 @@
+import queue
 import time
 
 import serial
@@ -18,6 +19,7 @@ class SerialComm:
         self.receive_thread = None
         self.running = False
         self.log_path = log_path
+        self.data_queue = queue.Queue()  # 用于存储接收到的数据
 
     def open(self):
         """
@@ -60,6 +62,7 @@ class SerialComm:
             if self.ser and self.ser.in_waiting > 0:
                 data = self.ser.readline().hex()
                 if data:
+                    self.data_queue.put(data)  # 将数据放入队列
                     self.handle_received_data(data)
 
     def handle_received_data(self, data):
@@ -68,8 +71,17 @@ class SerialComm:
         :param data:
         """
         """Override this method to handle received data"""
-        print(time.time())
-        get_log(self.log_path).info(f"Data received: {data}")
+        get_log(self.log_path).debug(f"Data received: {data}")
+
+    def get_received_data(self):
+        """
+        获取接收的数据
+        :return: list，返回队列中所有接收的数据
+        """
+        data_list = []
+        while not self.data_queue.empty():
+            data_list.append(self.data_queue.get())
+        return data_list
 
 
 if __name__ == '__main__':
