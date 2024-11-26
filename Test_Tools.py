@@ -2,10 +2,10 @@
 Example program to demonstrate Gooey's presentation of subparsers
 """
 
-import argparse
 from datetime import datetime
 
 from gooey import Gooey, GooeyParser
+
 from commons.variables import *
 from handlers.check_for_update import check_for_update, profile_check_for_update, driver_check_for_update, \
     config_check_for_update, audio_check_for_update, profile_rf7_check_for_update
@@ -16,8 +16,8 @@ from tools.direct_con_dev import direct_con_dev
 from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.gw_simulator import gw_simulator
-from tools.property_builder import property_builder
 from tools.link_duration import link_duration
+from tools.property_builder import property_builder
 from tools.regular_filter import regular_filter
 from tools.scene_builder_tool import scene_builder_tool
 from tools.t2_colorTemperaTure import t2_colorTemperaTure
@@ -28,19 +28,12 @@ from tools.web_reboot_tool import web_reboot_tool
 running = True
 
 
-@Gooey(
-    encoding='utf-8',
-    required_cols=2,
-    optional_cols=2,
-    program_name="Test-Tools",
-    language='chinese',
-    default_size=(750, 700),
-    header_show_title=False,
-    menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template,
-                                   item_subDev_info_template]},
-          {'name': '工具', 'items': [item_rttys, item_json]},
-          {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}]
-)
+@Gooey(encoding='utf-8', program_name="Test-Tools", language='chinese', default_size=(750, 700),
+       header_show_title=False,
+       menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template,
+                                      item_subDev_info_template]},
+             {'name': '工具', 'items': [item_rttys, item_json]},
+             {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}])
 def main():
     input_info = os.path.join(project_root, "input_info.ini")
     config_manager = ConfigReader(input_info)

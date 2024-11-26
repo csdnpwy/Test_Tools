@@ -17,7 +17,7 @@ log_path = "D:\\pwy_log\\Leelen-ATT\\hotel\\log.txt"
 press01 = "01050000FF008C3A"
 press02 = "010500000000CDCA"
 modul1_status = '0102000000187800'
-modul1_open_status = "010203ffff01c84e"
+modul1_open_status = "010203c3ff00c982"
 modul1_down_status = "010203000000784e"
 modul2_status = '01020000000F380E'
 modul2_open_status = "0102020f00bc48"
@@ -32,13 +32,14 @@ port = 23
 client = TCPClient(log_path, ip, port)
 client.connect()
 time.sleep(2)
-for i in range(0, 10000):
+for i in range(0, 5000):
     # 开操作
+    scene_res = True
     get_log(log_path).info(f"第{i+1}次触发场景开")
     serial1.send_data(bytes.fromhex(press01))
     time.sleep(0.3)
     serial1.send_data(bytes.fromhex(press02))
-    time.sleep(5)
+    time.sleep(2)
     get_log(log_path).info(f"   ---   读取模块1状态")
     serial1.send_data(bytes.fromhex(modul1_status))
     time.sleep(2)
@@ -47,54 +48,58 @@ for i in range(0, 10000):
     if modul1_open_status in str(res):
         get_log(log_path).info(f"      ---      模块1状态正常：全开")
     else:
+        scene_res = False
         get_log(log_path).error(f"      !!!      模块1状态异常：非全开")
-        data = {
-            "text": {
-                "content": f"error: 压测第{i + 1}次，模块1状态异常：非全开"
-            },
-            "msgtype": "text",
-            "actionCard": {
-                "hideAvatar": "1",
-                "btnOrientation": "1",
-                "singleTitle": "1",
-                "btns": [{
-                    "actionURL": "1",
-                    "title": "1"
-                }],
-                "text": "1",
-                "singleURL": "1",
-                "title": "1"
-            }
-        }
-        app_request(accesstoken, url, data, log_path)
+        now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i + 1}次，模块1状态异常：非全开"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
     get_log(log_path).info(f"   ---   读取模块2状态")
     client.send_data(bytes.fromhex(modul2_status))
-    time.sleep(2)
+    time.sleep(1)
     res = client.receive_data()
     get_log(log_path).debug(f"模块2状态：{res.hex()}")
     if modul2_open_status in str(res.hex()):
         get_log(log_path).info(f"      ---      模块2状态正常：全开")
     else:
+        scene_res = False
         get_log(log_path).error(f"      !!!      模块2状态异常：非全开")
-        data = {
-            "text": {
-                "content": f"error: 压测第{i + 1}次，模块2状态异常：非全开"
-            },
-            "msgtype": "text",
-            "actionCard": {
-                "hideAvatar": "1",
-                "btnOrientation": "1",
-                "singleTitle": "1",
-                "btns": [{
-                    "actionURL": "1",
-                    "title": "1"
-                }],
-                "text": "1",
-                "singleURL": "1",
-                "title": "1"
-            }
-        }
-        app_request(accesstoken, url, data, log_path)
+        now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i + 1}次，模块2状态异常：非全开"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
     get_log(log_path).info(f"   ---   查看筒射灯状态")
     # 点击屏幕规避浏览器自动退出
     pyautogui.click(50, 50)
@@ -123,10 +128,11 @@ for i in range(0, 10000):
     # > 10：保留面积大于 10 的轮廓。
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 10]
     # 判断是否存在24个灯亮
-    if len(filtered_contours) != 24:
-        error = f"筒射灯状态异常：{24 - len(filtered_contours)}个未开启，自动保存截图！"
+    if len(filtered_contours) != 16:
+        scene_res = False
+        error = f"筒射灯状态异常：{16 - len(filtered_contours)}个未开启，自动保存截图！"
         get_log(log_path).error(f"      !!!      {error}")
-        result_text = f"Total:24 OFF:{24 - len(filtered_contours)}"
+        result_text = f"Total:16 OFF:{16 - len(filtered_contours)}"
         # 存储灯的亮度状态
         # lights_status = []
         # 遍历每个轮廓，提取灯的亮度
@@ -155,9 +161,34 @@ for i in range(0, 10000):
         img_time = datetime.now().strftime('%Y%m%d%H%M%S')
         output_path = f"D:\\pwy_log\\Leelen-ATT\\hotel\\{img_time}.png"
         cv2.imwrite(output_path, image)
+        # now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i+1}次，{error}"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
+    else:
+        get_log(log_path).info(f"      ---      筒射灯状态正常：全开")
+    if not scene_res:
+        get_log(log_path).error(f"      !!!      第{i+1}次开场景控制失败")
+        now = datetime.now()
         data = {
             "text": {
-                "content": f"error: 压测第{i+1}次，{error}"
+                "content": f"{now}--error: 第{i+1}次开场景控制失败"
             },
             "msgtype": "text",
             "actionCard": {
@@ -174,15 +205,15 @@ for i in range(0, 10000):
             }
         }
         app_request(accesstoken, url, data, log_path)
-    else:
-        get_log(log_path).info(f"      ---      筒射灯状态正常：全开")
+    time.sleep(3)
+    get_log(log_path).debug(f"*********************************************************************************************")
     # 关操作
-    time.sleep(10)
+    scene_res = True
     get_log(log_path).info(f"第{i + 1}次触发场景关")
     serial1.send_data(bytes.fromhex(press01))
     time.sleep(0.3)
     serial1.send_data(bytes.fromhex(press02))
-    time.sleep(5)
+    time.sleep(2)
     get_log(log_path).info(f"   ---   读取模块1状态")
     serial1.send_data(bytes.fromhex(modul1_status))
     time.sleep(2)
@@ -191,54 +222,58 @@ for i in range(0, 10000):
     if modul1_down_status in str(res):
         get_log(log_path).info(f"      ---      模块1状态正常：全关")
     else:
+        scene_res = False
         get_log(log_path).error(f"      !!!      模块1状态异常：非全关")
-        data = {
-            "text": {
-                "content": f"error: 压测第{i + 1}次，模块1状态异常：非全关"
-            },
-            "msgtype": "text",
-            "actionCard": {
-                "hideAvatar": "1",
-                "btnOrientation": "1",
-                "singleTitle": "1",
-                "btns": [{
-                    "actionURL": "1",
-                    "title": "1"
-                }],
-                "text": "1",
-                "singleURL": "1",
-                "title": "1"
-            }
-        }
-        app_request(accesstoken, url, data, log_path)
+        now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i + 1}次，模块1状态异常：非全关"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
     get_log(log_path).info(f"   ---   读取模块2状态")
     client.send_data(bytes.fromhex(modul2_status))
-    time.sleep(2)
+    time.sleep(1)
     res = client.receive_data()
     get_log(log_path).debug(f"模块2状态：{res.hex()}")
     if modul2_down_status in str(res.hex()):
         get_log(log_path).info(f"      ---      模块2状态正常：全关")
     else:
+        scene_res = False
         get_log(log_path).error(f"      !!!      模块2状态异常：非全关")
-        data = {
-            "text": {
-                "content": f"error: 压测第{i + 1}次，模块2状态异常：非全关"
-            },
-            "msgtype": "text",
-            "actionCard": {
-                "hideAvatar": "1",
-                "btnOrientation": "1",
-                "singleTitle": "1",
-                "btns": [{
-                    "actionURL": "1",
-                    "title": "1"
-                }],
-                "text": "1",
-                "singleURL": "1",
-                "title": "1"
-            }
-        }
-        app_request(accesstoken, url, data, log_path)
+        # now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i + 1}次，模块2状态异常：非全关"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
     get_log(log_path).info(f"   ---   查看筒射灯状态")
     # 点击屏幕规避浏览器自动退出
     pyautogui.click(50, 50)
@@ -266,11 +301,12 @@ for i in range(0, 10000):
     # cv2.contourArea(cnt)：计算轮廓的面积。
     # > 10：保留面积大于 10 的轮廓。
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 10]
-    # 判断是否存在24个灯亮
+    # 判断是否存在24个灯灭
     if len(filtered_contours) != 0:
+        scene_res = False
         error = f"筒射灯状态异常：{len(filtered_contours)}个未关闭，自动保存截图！"
         get_log(log_path).error(f"      !!!      {error}")
-        result_text = f"Total:24 OPEN:{len(filtered_contours)}"
+        result_text = f"Total:16 OPEN:{len(filtered_contours)}"
         # 存储灯的亮度状态
         # lights_status = []
         # 遍历每个轮廓，提取灯的亮度
@@ -299,9 +335,34 @@ for i in range(0, 10000):
         img_time = datetime.now().strftime('%Y%m%d%H%M%S')
         output_path = f"D:\\pwy_log\\Leelen-ATT\\hotel\\{img_time}.png"
         cv2.imwrite(output_path, image)
+        # now = datetime.now()
+        # data = {
+        #     "text": {
+        #         "content": f"{now}--error: 压测第{i + 1}次，{error}"
+        #     },
+        #     "msgtype": "text",
+        #     "actionCard": {
+        #         "hideAvatar": "1",
+        #         "btnOrientation": "1",
+        #         "singleTitle": "1",
+        #         "btns": [{
+        #             "actionURL": "1",
+        #             "title": "1"
+        #         }],
+        #         "text": "1",
+        #         "singleURL": "1",
+        #         "title": "1"
+        #     }
+        # }
+        # app_request(accesstoken, url, data, log_path)
+    else:
+        get_log(log_path).info(f"      ---      筒射灯状态正常：全关")
+    if not scene_res:
+        get_log(log_path).error(f"      !!!      第{i+1}次关场景控制失败")
+        now = datetime.now()
         data = {
             "text": {
-                "content": f"error: 压测第{i + 1}次，{error}"
+                "content": f"{now}--error: 第{i+1}次关场景控制失败"
             },
             "msgtype": "text",
             "actionCard": {
@@ -318,11 +379,31 @@ for i in range(0, 10000):
             }
         }
         app_request(accesstoken, url, data, log_path)
-    else:
-        get_log(log_path).info(f"      ---      筒射灯状态正常：全关")
-    time.sleep(10)
+    time.sleep(3)
+    get_log(log_path).debug(f"*********************************************************************************************")
+    # 压测次数提示
     num = i + 1
-    if i % 100 == 0:
+    if i == 0:
+        data = {
+            "text": {
+                "content": f"info: 酒店项目已开始压测！"
+            },
+            "msgtype": "text",
+            "actionCard": {
+                "hideAvatar": "1",
+                "btnOrientation": "1",
+                "singleTitle": "1",
+                "btns": [{
+                    "actionURL": "1",
+                    "title": "1"
+                }],
+                "text": "1",
+                "singleURL": "1",
+                "title": "1"
+            }
+        }
+        app_request(accesstoken, url, data, log_path)
+    if num % 100 == 0:
         data = {
             "text": {
                 "content": f"info: 已压测{num}次"
