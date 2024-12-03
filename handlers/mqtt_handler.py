@@ -190,6 +190,13 @@ class MQTTClient:
         """
         return self.messages
 
+    def clean_message(self):
+        """
+        获取订阅主题及其消息
+        :return:
+        """
+        self.messages = {}
+
     def start_loop(self):
         """
         执行消息获取循环

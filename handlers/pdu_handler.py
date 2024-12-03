@@ -97,5 +97,9 @@ def ctl_pdu(ip, port=17722, lock=1, ctl='open', ctl_modul='leelen', tcp_type='ud
 
 if __name__ == '__main__':
     # 讯威开关
-    ctl_pdu('10.58.104.10', port=502, lock=0, ctl_modul='seewe', tcp_type='tcp')
+    # ctl_pdu('10.58.104.10', port=502, lock=0, ctl_modul='seewe', tcp_type='tcp')
     # ctl_pdu('10.58.104.10', port=502, lock=0, ctl='close', ctl_modul='seewe', tcp_type='tcp')
+    # 立林开关
+    ctl_pdu('10.58.51.144', ctl='close')
+    ctl_pdu('10.58.51.144')
+
