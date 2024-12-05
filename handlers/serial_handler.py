@@ -83,6 +83,14 @@ class SerialComm:
             data_list.append(self.data_queue.get())
         return data_list
 
+    def clear_data_queue(self):
+        """
+        清空接收数据队列
+        """
+        with self.data_queue.mutex:
+            self.data_queue.queue.clear()
+        get_log(self.log_path).debug("Cleared all data in the queue")
+
 
 if __name__ == '__main__':
     log_path = "D:\\pwy_log\\Leelen-ATT\\test.txt"

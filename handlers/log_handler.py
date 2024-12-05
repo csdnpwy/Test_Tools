@@ -3,11 +3,12 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-
-# 生成日志记录器
-# 参数：日志存储路径
-# 返回：日志记录器
 def get_log(log_path):
+    """
+    生成日志记录器，输出执行日志到前端并记录到本地文件。
+    :param log_path: 日志存储路径
+    :return: 日志记录器
+    """
     # 创建日志目录
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     # 创建日志记录器

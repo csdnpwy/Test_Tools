@@ -17,7 +17,9 @@ password = "56ca0ac2c3b30091cc95b7d122b97f86a2f5c0be93eab3fe397825e3c6633b79"
 subscribe_topic = "lliot/fiids_report/0001201becda3b136490/2"
 expect_open = '{"fiid":49408,"value":{"onOff":1}}'
 expect_down = '{"fiid":49408,"value":{"onOff":0}}'
+status_change = '{"fiid":49408,"value":{"onOff":'
 check_ip = "10.58.2.11"
+err_num = 0
 # 一机一密连接到MQTT代理
 mqtt_client = MQTTClient(log_path, 'iottest.leelen.net', username=f"{username}:{did}", password=password, client_id=did)
 mqtt_client.connect()
@@ -32,20 +34,19 @@ for i in range(0, 5000):
     num = i + 1
     # 按键自定义控制开
     mqtt_client.clean_message()
-    get_log(log_path).info(f"   ---   第{num}次进行控制按键自定义开")
+    get_log(log_path).info(f"   ---   第{num}次进行控制按键自定义")
     ctl_pdu('10.58.51.144', ctl='close')
     ctl_pdu('10.58.51.144')
     # mqtt监听是否收到控制报文
     time.sleep(5)
     mes = mqtt_client.get_message().get(subscribe_topic, None)
     get_log(log_path).debug(f"{mes}")
-    if expect_open in str(mes):
-        get_log(log_path).info(f"      ---      监听幻彩灯带mqtt上报开状态报文正常")
+    if status_change in str(mes):
+        get_log(log_path).info(f"      ---      监听幻彩灯带mqtt上报状态变化正常")
+        err_num = 0
     else:
-        get_log(log_path).error(f"      !!!      监听幻彩灯带mqtt上报开状态报文异常")
-        err_info = f"第{num}次进行控制按键自定义开幻彩灯带失败！"
-        dingding("error", err_info)
-        raise CustomError("测试异常！")
+        get_log(log_path).error(f"      !!!      监听幻彩灯带mqtt上报状态变化异常")
+        err_num += 1
     # 网关reboot
     get_log(log_path).info(f"   ---   网关reboot")
     serial1.send_data('reboot\n'.encode('utf-8'))
@@ -65,41 +66,46 @@ for i in range(0, 5000):
                 err_info = f"60S内网关无法ping通"
                 dingding("error", err_info)
                 raise CustomError("测试异常！")
-    # 按键自定义控制关
-    mqtt_client.clean_message()
-    get_log(log_path).info(f"   ---   第{num}次进行控制按键自定义关")
-    ctl_pdu('10.58.51.144', ctl='close')
-    ctl_pdu('10.58.51.144')
-    # mqtt监听是否收到控制报文
-    time.sleep(5)
-    mes = mqtt_client.get_message().get(subscribe_topic, None)
-    get_log(log_path).debug(f"{mes}")
-    if expect_down in str(mes):
-        get_log(log_path).info(f"      ---      监听幻彩灯带mqtt上报关状态报文正常")
-    else:
-        get_log(log_path).error(f"      !!!      监听幻彩灯带mqtt上报关状态报文异常")
-        err_info = f"第{num}次进行控制按键自定义关幻彩灯带失败！"
+    # # 按键自定义控制关
+    # mqtt_client.clean_message()
+    # get_log(log_path).info(f"   ---   第{num}次进行控制按键自定义")
+    # ctl_pdu('10.58.51.144', ctl='close')
+    # ctl_pdu('10.58.51.144')
+    # # mqtt监听是否收到控制报文
+    # time.sleep(5)
+    # mes = mqtt_client.get_message().get(subscribe_topic, None)
+    # get_log(log_path).debug(f"{mes}")
+    # if status_change in str(mes):
+    #     get_log(log_path).info(f"      ---      监听幻彩灯带mqtt上报状态变化正常")
+    # else:
+    #     get_log(log_path).error(f"      !!!      监听幻彩灯带mqtt上报状态变化异常")
+    #     err_info = f"第{num}次进行控制按键自定义幻彩灯带失败！"
+    #     dingding("error", err_info)
+    #     raise CustomError("测试异常！")
+    # # 网关reboot
+    # get_log(log_path).info(f"   ---   网关reboot")
+    # serial1.send_data('reboot\n'.encode('utf-8'))
+    # time.sleep(2)
+    # for t in range(0, 12):
+    #     ping_res = ping(check_ip)
+    #     get_log(log_path).debug(f'      ---      Ping ip: {check_ip} Res: {ping_res}')
+    #     if is_ping_successful(ping_res):
+    #         get_log(log_path).info(f'      ---      {check_ip}已上电')
+    #         time.sleep(25)
+    #         break
+    #     else:
+    #         get_log(log_path).debug(f'      ---      {(t + 1) * 5}S内还未上电，继续等待...')
+    #         time.sleep(5)
+    #         if i == 11:
+    #             get_log(log_path).error(f'      !!!       60S内上电失败')
+    #             err_info = f"60S内网关无法ping通"
+    #             dingding("error", err_info)
+    #             raise CustomError("测试异常！")
+    # 连续多次错误终止测试
+    if err_num == 5:
+        err_info = f"连续多次控制失败，怀疑按键自定义关系已被破坏，终止测试，请自行查看！"
         dingding("error", err_info)
         raise CustomError("测试异常！")
-    # 网关reboot
-    get_log(log_path).info(f"   ---   网关reboot")
-    serial1.send_data('reboot\n'.encode('utf-8'))
-    time.sleep(2)
-    for t in range(0, 12):
-        ping_res = ping(check_ip)
-        get_log(log_path).debug(f'      ---      Ping ip: {check_ip} Res: {ping_res}')
-        if is_ping_successful(ping_res):
-            get_log(log_path).info(f'      ---      {check_ip}已上电')
-            time.sleep(25)
-            break
-        else:
-            get_log(log_path).debug(f'      ---      {(t + 1) * 5}S内还未上电，继续等待...')
-            time.sleep(5)
-            if i == 11:
-                get_log(log_path).error(f'      !!!       60S内上电失败')
-                err_info = f"60S内网关无法ping通"
-                dingding("error", err_info)
-                raise CustomError("测试异常！")
     # 进度汇报
     if num == 1:
         dingding("info", f"幻彩灯带压测开始")
