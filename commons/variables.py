@@ -1,7 +1,7 @@
 import os
 
 # 软件信息
-version = 24112013
+version = 25010610
 
 # 常规变量
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -62,6 +62,11 @@ item_subDev_info_template = {
     'type': 'Link',
     'menuTitle': '虚拟子设备信息模板下载',
     'url': f'{hfs_url}subDev_info_template.xlsx'
+}
+item_knx_conf_template = {
+    'type': 'Link',
+    'menuTitle': 'KNX配置文件下载',
+    'url': f'{hfs_url}knx_conf.csv'
 }
 item_script_link = {
     'type': 'Link',
@@ -313,6 +318,10 @@ readme_test = "**************************** 使用说明 ***********************
               "修订记录；\n" \
               "24081410：初版发行\n" \
               "24082617：修订以Excel为数据驱动进行局域网tcp通信\n" \
+              "KNX设备模拟器：\n" \
+              "1、通过解析knx配置文件，模拟KNX设备\n" \
+              "修订记录；\n" \
+              "25010610：初版发行\n" \
               "\n"
 
 readme_access_ctl = "**************************** 使用说明 ****************************\n" \

@@ -7,7 +7,7 @@ from handlers.log_handler import get_log
 from handlers.tcp_handler import TCPClient
 
 
-def ctl_pdu(ip, port=17722, lock=1, ctl='open', ctl_modul='leelen', tcp_type='udp'):
+def ctl_pdu(ip, port=17722, lock=1, ctl='open', ctl_modul='leelen', protocol='udp'):
     """
     控制pdu
     :param ip: pdu ip
@@ -15,7 +15,7 @@ def ctl_pdu(ip, port=17722, lock=1, ctl='open', ctl_modul='leelen', tcp_type='ud
     :param lock: 控制座号
     :param ctl: open：打开  close：关闭  one：关闭-打开
     :param ctl_modul: pdu模型  leelen：立林   seewe：讯威
-    :param tcp_type: tcp连接类型  tcp、udp
+    :param protocol: tcp连接类型  tcp、udp
     """
     log_path = f"{log_dir}ctl_pdu.txt"
     if ctl_modul == 'seewe':
@@ -86,7 +86,7 @@ def ctl_pdu(ip, port=17722, lock=1, ctl='open', ctl_modul='leelen', tcp_type='ud
             'lock_4_open': lock_4_open,
         }
         cmd = cmd_mapping[f"lock_{lock}_{ctl}"]
-    client = TCPClient(log_path, ip, port, type=tcp_type)
+    client = TCPClient(log_path, ip, port, protocol=protocol)
     client.connect()
     client.send_data(cmd)
     time.sleep(0.5)

@@ -16,6 +16,7 @@ from tools.direct_con_dev import direct_con_dev
 from tools.excel_tool import excel_tool
 from tools.gw_bind_unbind_pressure import gw_bind_unbind_pressure
 from tools.gw_simulator import gw_simulator
+from tools.knx_sudev_simulator import knx_dev_simulator
 from tools.link_duration import link_duration
 from tools.property_builder import property_builder
 from tools.regular_filter import regular_filter
@@ -31,7 +32,7 @@ running = True
 @Gooey(encoding='utf-8', program_name="Test-Tools", language='chinese', default_size=(750, 700),
        header_show_title=False,
        menu=[{'name': '文件', 'items': [item_script_link, item_env, item_vdev, item_sys, item_data_pressure_test_template,
-                                      item_subDev_info_template]},
+                                      item_subDev_info_template, item_knx_conf_template]},
              {'name': '工具', 'items': [item_rttys, item_json]},
              {'name': '帮助', 'items': [item_about, item_guide_web, item_guide]}])
 def main():
@@ -216,6 +217,22 @@ def main():
                        default=config_manager.get_value('从网关模拟器', '间隔时长', fallback='10'))
     other.add_argument('测试次数', type=int, widget='TextField', help='所有子设备发送一轮信息请求为1次',
                        default=config_manager.get_value('从网关模拟器', '测试次数', fallback='100'))
+
+    knx_simulator = subs.add_parser('KNX设备模拟器')
+    # test_model = knx_simulator.add_argument_group('测试模型参数', gooey_options={'columns': 2})
+    # models = ["陪测模型", "压测模型"]
+    # test_model.add_argument('测试模型', type=str, widget='Dropdown', choices=models,
+    #                         default=config_manager.get_value('KNX设备模拟器', '测试模型', fallback='陪测模型'))
+    # test_model.add_argument('压测控制频率', type=int, widget='TextField', help='压测模型必要参数\n每*S轮询控制场景群组地址',
+    #                         default=config_manager.get_value('KNX设备模拟器', '状态上报区间', fallback='30'))
+    knxip = knx_simulator.add_argument_group('KNXIP模块信息', gooey_options={'columns': 2})
+    knxip.add_argument('IP', type=str, widget='TextField',
+                       default=config_manager.get_value('KNX设备模拟器', 'IP'))
+    # knxip.add_argument('Did', type=str, widget='TextField', help='压测模型必要参数',
+    #                    default=config_manager.get_value('KNX设备模拟器', 'Did', fallback='None'))
+    path = knx_simulator.add_argument_group('群组地址CSV文件')
+    path.add_argument('Path', type=str, widget='FileChooser', help='文件模板及说明获取：文件-KNX配置文件下载',
+                      default=config_manager.get_value('KNX设备模拟器', 'Path'))
 
     readme_parser = subs.add_parser('****海外门禁助手****')
     env = readme_parser.add_argument_group('Readme', gooey_options={'columns': 1})
@@ -417,6 +434,10 @@ def main():
             log_path = f"{log_dir}从网关模拟器_{day}.txt"
             config_check_for_update(log_path)
             gw_simulator(args, log_path)
+        elif args.tools == 'KNX设备模拟器':
+            log_path = f"{log_dir}KNX设备模拟器_{day}.txt"
+            config_check_for_update(log_path)
+            knx_dev_simulator(args, log_path)
         else:
             pass
 
