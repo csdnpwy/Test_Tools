@@ -11,7 +11,7 @@ from ping3 import ping
 from commons.variables import *
 from handlers.app_handler import get_terminal_info, app_request
 from handlers.error_handler import CustomError
-from handlers.global_handler import get_stake_did, is_ping_successful
+from handlers.global_handler import get_stake_did, is_ping_successful, parse_input
 from handlers.log_handler import get_log
 from handlers.mqtt_handler import MQTTClient
 from handlers.mysql_tool import MyPymysqlPool
@@ -24,6 +24,7 @@ def data_pressure(args, log_path):
     :param args: 前端参数
     :param log_path: 日志路径
     """
+    global mqtt_client
     get_log(log_path).debug(args)
     get_log(log_path).info(f'Step 1：检测测试环境...')
     # 检测测试环境
@@ -87,7 +88,7 @@ def data_pressure(args, log_path):
             get_log(log_path).info(f'    ----    进行第{num + 1}轮压测')
             for index, row in df.iterrows():
                 if row['是否执行'] == 'T':
-                    get_log(log_path).error(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
+                    get_log(log_path).info(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
                     if row['用例名称'] == "睡眠":
                         time.sleep(int(row["请求数据"]))
                         continue
@@ -95,7 +96,7 @@ def data_pressure(args, log_path):
                         pdu_ip = row["请求数据"].split(',')[0]
                         check_ip = row["请求数据"].split(',')[-1]
                         pdu_lock = row["请求数据"].split(',')[1]
-                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', tcp_type='tcp')
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
                         for i in range(0, 20):
                             ping_res = ping(check_ip)
                             get_log(log_path).debug(f'        ----        Ping ip: {check_ip} Res: {ping_res}')
@@ -104,7 +105,7 @@ def data_pressure(args, log_path):
                                 break
                             else:
                                 get_log(log_path).debug(f'        ----        {(i+1)*5}S内还未上电，继续等待...')
-                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', tcp_type='tcp')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
                                 time.sleep(5)
                                 if i == 19:
                                     get_log(log_path).error(f'        !!!!        100S内上电失败')
@@ -114,7 +115,7 @@ def data_pressure(args, log_path):
                         pdu_ip = row["请求数据"].split(',')[0]
                         check_ip = row["请求数据"].split(',')[-1]
                         pdu_lock = row["请求数据"].split(',')[1]
-                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', tcp_type='tcp')
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
                         for i in range(0, 20):
                             ping_res = ping(check_ip)
                             if not is_ping_successful(ping_res):
@@ -122,7 +123,7 @@ def data_pressure(args, log_path):
                                 break
                             else:
                                 get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未下电，继续等待...')
-                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', tcp_type='tcp')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
                                 time.sleep(5)
                                 if i == 19:
                                     get_log(log_path).error(f'        !!!!        100S内下电失败')
@@ -135,16 +136,17 @@ def data_pressure(args, log_path):
                         res = app_request(accessToken, url, post_data, log_path)
                         get_log(log_path).debug(f"{res}")
                         if expect_res in res:
-                            get_log(log_path).error(f"        ----        与预期请求结果相符，测试正常")
+                            get_log(log_path).info(f"        ----        与预期请求结果相符，测试正常")
                             break
                         else:
                             get_log(log_path).error(f"        !!!!        与预期请求结果不符，10S后重新发起请求")
                             time.sleep(10)
                             if i == 2:
                                 get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
-                                raise CustomError("测试异常！")
+                                if args.models == "遇错即停":
+                                    raise CustomError("测试异常！")
             time.sleep(args.测试间隔时长)
-    if protocol == "MQTT":
+    elif protocol == "MQTT":
         # 获取接口token
         terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.APP密码, log_path)
         accessToken = json.loads(terminal_info)['params']['accessToken']
@@ -192,7 +194,7 @@ def data_pressure(args, log_path):
                     print(f'        ----        桩did={did}注册成功')
                     time.sleep(2)
                 else:
-                    get_log(log_path).error(f"        ----        桩did={did}注册失败！")
+                    get_log(log_path).error(f"        !!!!        桩did={did}注册失败！")
                     sys.exit()
             except Exception as e:
                 get_log(log_path).error(f'        !!!!        注册MQTT桩失败：{e}')
@@ -210,9 +212,46 @@ def data_pressure(args, log_path):
             get_log(log_path).info(f'    ----    进行第{num + 1}轮压测')
             for index, row in df.iterrows():
                 if row['是否执行'] == 'T':
-                    get_log(log_path).error(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
+                    get_log(log_path).info(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
                     if row['用例名称'] == "睡眠":
                         time.sleep(int(row["请求数据"]))
+                        continue
+                    elif row['用例名称'] == "迅威上电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            get_log(log_path).debug(f'        ----        Ping ip: {check_ip} Res: {ping_res}')
+                            if is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已上电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未上电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内上电失败')
+                                    raise CustomError("测试异常！")
+                        continue
+                    elif row['用例名称'] == "迅威下电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            if not is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已下电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未下电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内下电失败')
+                                    raise CustomError("测试异常！")
                         continue
                     post_data = json.loads(row["请求数据"])
                     expect_res = row["预期请求结果"]
@@ -225,7 +264,7 @@ def data_pressure(args, log_path):
                     mes = mqtt_client.get_message().get(subscribe_topic, None)
                     for i in range(0, 3):
                         if expect_res in str(mes):
-                            get_log(log_path).error(f"        ----        与预期请求结果相符，测试正常")
+                            get_log(log_path).info(f"        ----        与预期请求结果相符，测试正常")
                             break
                         else:
                             get_log(log_path).error(f"        !!!!        与预期请求结果不符，10S后重新发起请求")
@@ -234,7 +273,156 @@ def data_pressure(args, log_path):
                             mes = mqtt_client.get_message().get(subscribe_topic, None)
                             if i == 2:
                                 get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
-                                raise CustomError("测试异常！")
+                                if args.models == "遇错即停":
+                                    raise CustomError("测试异常！")
+            time.sleep(args.测试间隔时长)
+    elif protocol == "HTTP-MQTT":
+        # 获取接口token
+        terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.APP密码, log_path)
+        accessToken = json.loads(terminal_info)['params']['accessToken']
+        # 设置过期时间
+        token_expiry = datetime.now() + timedelta(hours=22)
+        get_log(log_path).info(f'    ----    启用MQTT客户端')
+        environment = envs[evn]["云端环境_v"]
+        did = get_stake_did(accessToken, environment, log_path)
+        username = "HA-CE-R31-001"
+        sql_did = f"select device_secret from iot_device where did = '{did}'"
+        device_secret_res = db_tool.getAll(sql_did)
+        if not device_secret_res:
+            try:
+                # 创建MQTT客户端
+                password = hashlib.sha256('jhfeq6vsxonjjlfa'.encode('utf-8')).hexdigest()
+                mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=username,
+                                         password=password, client_id=did, args=args)
+                # 连接到MQTT代理
+                mqtt_client.connect()
+                # 订阅主题
+                mqtt_client.subscribe(f"lliot/receiver/{did}")
+                # 发布消息
+                payload = {
+                    "method": "dmgr.reg",
+                    "src": f"{did}",
+                    "dst": f'{dev_manage_moduleID}',
+                    "version": "V1.0",
+
+                    "params": {
+                        "did": f"{did}",
+                        "softModel": f"{username}",
+                        "profileId": 7
+                    },
+                    "seq": 1
+                }
+                mqtt_client.publish(f"lliot/receiver/{dev_manage_moduleID}", json.dumps(payload))
+                get_log(log_path).info(f'        ----        注册MQTT桩中...')
+                time.sleep(3)
+                # 启动消息循环
+                mqtt_client.start_loop()
+                # 停止消息循环
+                mqtt_client.stop_loop()
+                # 断开连接
+                mqtt_client.disconnect()
+                device_secret_res = db_tool.getAll(sql_did)
+                if device_secret_res:
+                    print(f'        ----        桩did={did}注册成功')
+                    time.sleep(2)
+                else:
+                    get_log(log_path).error(f"        !!!!        桩did={did}注册失败！")
+                    sys.exit()
+            except Exception as e:
+                get_log(log_path).error(f'        !!!!        注册MQTT桩失败：{e}')
+                sys.exit()
+        else:
+            get_log(log_path).info(f'        ----        MQTT桩已存在，无需注册...')
+        # 一机一密连接到MQTT代理
+        mqtt_client = MQTTClient(log_path, f'{envs[evn]["云端MQTT_Host_v"]}', username=f"{username}:{did}",
+                                 password=f"{device_secret_res[0]['device_secret']}", client_id=did, args=args)
+        mqtt_client.connect()
+        time.sleep(5)
+        # 读取 Excel 文件
+        df = pd.read_excel(excel_path, sheet_name="Http-Mqtt")
+        for num in range(0, int(nums)):
+            # 防止token过期
+            if datetime.now() >= token_expiry:
+                terminal_info = get_terminal_info(envs[evn]["云端环境_v"], mysql_info, args.APP用户名, args.密码, log_path)
+                accessToken = json.loads(terminal_info)['params']['accessToken']
+                token_expiry = datetime.now() + timedelta(hours=20)  # 重置计时器
+            get_log(log_path).info(f'    ----    进行第{num + 1}轮压测')
+            for index, row in df.iterrows():
+                if row['是否执行'] == 'T':
+                    get_log(log_path).info(f"        ----        执行用例-[{row['用例编号']}-{row['用例名称']}]")
+                    if row['用例名称'] == "睡眠":
+                        time.sleep(int(row["请求数据"]))
+                        continue
+                    elif row['用例名称'] == "迅威上电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            get_log(log_path).debug(f'        ----        Ping ip: {check_ip} Res: {ping_res}')
+                            if is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已上电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未上电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl_modul='seewe', protocol='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内上电失败')
+                                    raise CustomError("测试异常！")
+                        continue
+                    elif row['用例名称'] == "迅威下电":
+                        pdu_ip = row["请求数据"].split(',')[0]
+                        check_ip = row["请求数据"].split(',')[-1]
+                        pdu_lock = row["请求数据"].split(',')[1]
+                        ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
+                        for i in range(0, 20):
+                            ping_res = ping(check_ip)
+                            if not is_ping_successful(ping_res):
+                                get_log(log_path).info(f'        ----        {check_ip}已下电')
+                                break
+                            else:
+                                get_log(log_path).debug(f'        ----        {(i + 1) * 5}S内还未下电，继续等待...')
+                                ctl_pdu(pdu_ip, port=502, lock=pdu_lock, ctl='close', ctl_modul='seewe', protocol='tcp')
+                                time.sleep(5)
+                                if i == 19:
+                                    get_log(log_path).error(f'        !!!!        100S内下电失败')
+                                    raise CustomError("测试异常！")
+                        continue
+                    post_data = json.loads(row["请求数据"])
+                    subscribe_topics = parse_input(row["订阅主题"])
+                    if not subscribe_topics:
+                        get_log(log_path).error(f'        !!!!        订阅主题为空或主题格式异常')
+                        if args.models == "遇错即停":
+                            raise CustomError("测试异常！")
+                    for subscribe_topic in subscribe_topics:
+                        mqtt_client.subscribe(subscribe_topic)
+                    time.sleep(10)
+                    expect_time = row["预期判断间隔"]
+                    expect_res = row["预期订阅结果"]
+                    url = f"{envs[evn]['云端环境_v']}{row['请求URL']}"
+                    for i in range(0, 3):
+                        all_res = True
+                        app_request(accessToken, url, post_data, log_path)
+                        time.sleep(int(expect_time))
+                        for subscribe_topic in subscribe_topics:
+                            mes = mqtt_client.get_message().get(subscribe_topic, None)
+                            if expect_res in str(mes):
+                                continue
+                            else:
+                                all_res = False
+                                get_log(log_path).error(f"        !!!!        主题{subscribe_topic}未收到预期订阅结果")
+                        if all_res:
+                            get_log(log_path).info(f"        ----        与预期请求结果相符，测试正常")
+                            break
+                        else:
+                            get_log(log_path).error(f"        !!!!        与预期请求结果不符，10S后重新发起请求")
+                            time.sleep(10)
+                            if i == 2:
+                                get_log(log_path).error(f'        !!!!        达到重试限制，测试失败')
+                                if args.models == "遇错即停":
+                                    raise CustomError("测试异常！")
             time.sleep(args.测试间隔时长)
     else:
         get_log(log_path).error(f'    !!!!    暂不支持此协议压测，敬请期待')

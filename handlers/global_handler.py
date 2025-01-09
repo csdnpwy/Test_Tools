@@ -139,3 +139,24 @@ def custom_decimals_to_hex(decimal_str, bit_sizes=None):
     # Step 3: 将拼接后的二进制字符串转为十六进制
     hex_result = hex(int(binary_str, 2))[2:].upper()  # 去掉 '0x' 并转为大写
     return hex_result
+
+def parse_input(input_str):
+    """
+    输入字符串格式 lliot/fiids_report/0001202ce8a788ba36b4001/204...206
+    输出列表['lliot/fiids_report/0001202ce8a788ba36b4001/204','lliot/fiids_report/0001202ce8a788ba36b4001/205','lliot/fiids_report/0001202ce8a788ba36b4001/206']
+    输入格式 lliot/fiids_report/0001202ce8a788ba36b4001/204:lliot/fiids_report/0001202ce8a788ba36b4001/207
+    输出列表['lliot/fiids_report/0001202ce8a788ba36b4001/204','lliot/fiids_report/0001202ce8a788ba36b4001/207']
+    :param input_str: 输入字符
+    :return: 处理后列表
+    """
+    result = []
+    if "..." in input_str:
+        # 处理范围格式
+        prefix, range_part = input_str.rsplit("/", 1)
+        start, end = map(int, range_part.split("..."))
+        result = [f"{prefix}/{i}" for i in range(start, end + 1)]
+    elif ":" in input_str:
+        # 处理冒号格式
+        parts = input_str.split(":")
+        result = list(parts)
+    return result

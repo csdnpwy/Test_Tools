@@ -7,7 +7,7 @@ import time
 
 from handlers.csv_handler import CSVHandler
 from handlers.data_encrypt_handler import aes_decrypt
-from handlers.global_handler import extract_between, hex_to_custom_decimals, custom_decimals_to_hex
+from handlers.global_handler import extract_between, hex_to_custom_decimals, custom_decimals_to_hex, parse_input
 from handlers.log_handler import get_log
 
 
@@ -302,17 +302,14 @@ class KNXIpClient(TCPClient):
                     group_name = csv_row['Group name']
                     if "_SC_" in group_name:  # 场景控制
                         sc_id = message[-1]
-                        subaddr_list = csv_row['SCSubAddr'].split('-')
-                        if sc_id == '0':  # 对应210_SC_卧室睡眠_CTL_1，关灯操作
-                            end = "80"
-                        else:  # 对应211_SC_卧室起床_CTL_2，开灯灯操作
+                        subaddr_list = parse_input(csv_row['SCSubAddr'])
+                        if sc_id == '0':  # 对应101_SC_灯全开_CTL_1
                             end = "81"
-                        for subassr in subaddr_list:
-                            destination = custom_decimals_to_hex(subassr)
-                            seq = self.get_sid()
-                            status_rsp = message[:16] + seq + "001100BCE00000" + destination + f"0100{end}"
-                            self.send_data(bytes.fromhex(status_rsp))
-                            get_log(self.log_path).info(f"   ---   场景子设备状态回复：{status_rsp}")
+                        else:  # 对应102_SC_灯全关_CTL_2
+                            end = "80"
+                        # 创建并启动线程
+                        thread = threading.Thread(target=self.process_scene_subdevices, args=(message, subaddr_list, end))
+                        thread.start()
                     else:  # 单控
                         status_row = self.csv_handler.find_by_column('Group name', group_name.replace('CTL', 'STA'))
                         if status_row:
@@ -327,6 +324,22 @@ class KNXIpClient(TCPClient):
             exit()
         else:
             pass
+
+    def process_scene_subdevices(self, message, subaddr_list, end):
+        """
+        处理场景子设备状态回复的进程逻辑
+        :param message: 原始UDP消息
+        :param subaddr_list: 子设备地址列表
+        :param end: 状态尾部值
+        """
+        for subassr in subaddr_list:
+            interval_time = random.uniform(0.04, 0.08)
+            destination = custom_decimals_to_hex(subassr)
+            seq = self.get_sid()
+            status_rsp = message[:16] + seq + "001100BCE00000" + destination + f"0100{end}"
+            self.send_data(bytes.fromhex(status_rsp))
+            get_log(self.log_path).info(f" --- 场景子设备状态回复：{status_rsp}")
+            time.sleep(interval_time)
 
     def connect_knxip_server(self):
         """

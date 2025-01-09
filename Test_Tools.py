@@ -359,7 +359,7 @@ def main():
     scenes = ["iotpre", "iottest", "56", "58"]
     env.add_argument('测试环境', type=str, widget='Dropdown', choices=scenes,
                      default=config_manager.get_value('数据压测器', '测试环境', fallback='iotpre'))
-    protocol = ["HTTP", "MQTT", "TCP", "UDP", "MIX"]
+    protocol = ["HTTP", "MQTT", "HTTP-MQTT", "TCP", "UDP"]
     env.add_argument('压测协议', type=str, widget='Dropdown', choices=protocol,
                      default=config_manager.get_value('数据压测器', '压测协议', fallback='HTTP'))
     env.add_argument('APP用户名', type=str, widget='TextField',
